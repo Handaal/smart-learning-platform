@@ -1,0 +1,107 @@
+services:
+  # ── PostgreSQL + TimescaleDB ─────────────────────────────────
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: step_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       step_db
+      POSTGRES_USER:     step_user
+      POSTGRES_PASSWORD: step_pass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U step_user -d step_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: step_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ── Backend API ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: step_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV:         production
+      PORT:             3001
+      DATABASE_URL:     postgresql://step_user:step_pass@db:5432/step_db
+      REDIS_URL:        redis://redis:6379
+      JWT_SECRET:       ${JWT_SECRET}
+      CORS_ORIGIN:      ${CORS_ORIGIN:-http://localhost:5173}
+      AI_SERVICE_URL:   http://ai-services:8000
+      AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY}
+    ports:
+      - "3001:3001"
+    volumes:
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health/ready >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+
+  # ── AI Services ──────────────────────────────────────────────
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile
+    container_name: step_ai
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://step_user:step_pass@db:5432/step_db
+      API_KEY:      ${AI_SERVICE_API_KEY}
+    ports:
+      - "8000:8000"
+
+  # ── Frontend (dev only — use static CDN in production) ───────
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: step_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:3001
+    ports:
+      - "5173:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+  redis_data:
+  backend_logs:

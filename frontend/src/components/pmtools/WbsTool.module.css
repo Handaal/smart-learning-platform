@@ -1,0 +1,70 @@
+.root {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+}
+
+.title { font-size: 0.9375rem; font-weight: 600; }
+
+.headerActions { display: flex; align-items: center; gap: var(--space-4); }
+
+.hint { font-size: 0.75rem; color: var(--color-text-3); }
+
+.tree { padding: var(--space-3) var(--space-2); }
+
+.nodeWrapper { display: flex; flex-direction: column; }
+
+.nodeRow {
+  display: flex; align-items: center;
+  gap: var(--space-2); padding: 4px var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+.nodeRow:hover { background: var(--color-surface-2); }
+.nodeRow:hover .nodeActions { opacity: 1; }
+
+.rootRow { font-weight: 600; color: var(--color-accent-2); }
+
+.toggle {
+  display: grid; place-items: center;
+  color: var(--color-text-3); cursor: pointer; flex-shrink: 0;
+  width: 16px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.nodeLabel {
+  flex: 1; font-size: 0.875rem; cursor: text;
+  color: var(--color-text); line-height: 1.5;
+}
+
+.nodeInput {
+  flex: 1; background: var(--color-surface-3);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: var(--color-text); font-size: 0.875rem;
+  padding: 2px var(--space-2); outline: none;
+}
+
+.nodeActions {
+  display: flex; gap: 2px;
+  opacity: 0; transition: opacity var(--transition-fast);
+}
+
+.iconBtn {
+  background: none; border: none; cursor: pointer;
+  color: var(--color-text-3); padding: 3px;
+  border-radius: var(--radius-sm);
+  display: grid; place-items: center;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.iconBtn:hover { color: var(--color-accent-2); background: var(--color-accent-glow); }

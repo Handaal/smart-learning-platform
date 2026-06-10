@@ -1,0 +1,938 @@
+// ============================================================
+// STEP Platform — Prisma Schema
+// PostgreSQL + TimescaleDB
+// ============================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────
+
+enum CohortType {
+  experimental
+  control
+}
+
+enum AccountRole {
+  learner
+  research_admin
+}
+
+enum AffectState {
+  confusion
+  frustration
+  boredom_disengagement
+  high_engagement
+  test_anxiety
+  neutral
+  no_face_low_confidence
+}
+
+enum AdaptiveTag {
+  baseline
+  confusion
+  frustration
+  boredom_disengagement
+  high_engagement
+  test_anxiety
+  neutral
+  no_face_low_confidence
+}
+
+enum LearningPref {
+  reading_first
+  video_first
+  simulation_first
+  discussion_first
+  no_preference
+}
+
+enum ReflectionDepth {
+  surface
+  analytical
+  critical
+}
+
+enum InterventionType {
+  scaffolded_hint
+  worked_example
+  micro_learning_review
+  task_decomposition
+  supportive_message
+  interactive_case_switch
+  quick_decision_question
+  advanced_path
+  neutral_reassurance
+  operational_safety_protocol
+  do_nothing
+}
+
+enum AssessmentForm {
+  pre
+  mid
+  post
+  transfer
+}
+
+enum ContentType {
+  TEXT
+  VISUAL
+  VIDEO
+  ASSESSMENT
+}
+
+enum CompetencySource {
+  assessment
+  artifact
+  simulation
+}
+
+enum ModuleProgressStatus {
+  not_started
+  in_progress
+  gated
+  complete
+}
+
+enum QuizScope {
+  lesson
+  unit
+  pretest
+  posttest
+}
+
+enum QuizQuestionType {
+  true_false
+  mcq
+}
+
+enum AssessmentDimension {
+  s1
+  s2
+  s3
+  s4
+  s5
+}
+
+enum QuizAttemptStatus {
+  in_progress
+  submitted
+}
+
+enum PublishStatus {
+  draft
+  published
+}
+
+// ── Core Identity ─────────────────────────────────────────────
+
+model Learner {
+  id            String    @id @default(uuid())
+  participantId String    @unique @map("participant_id") @db.VarChar(20)
+  cohort        CohortType
+  role          AccountRole @default(learner)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastActive    DateTime? @map("last_active")
+  isActive      Boolean   @default(true) @map("is_active")
+
+  // Relations
+  learnerProfile    LearnerProfile?
+  consentRecords    ConsentRecord[]
+  authCredential    AuthCredential?
+  sessions          Session[]
+  moduleProgress    ModuleProgress[]
+  emotionEvents     EmotionEvent[]
+  behaviorWindows   BehaviorWindow[]
+  adaptiveEvents    AdaptiveEvent[]
+  assessments       Assessment[]
+  quizAttempts      QuizAttempt[]
+  competencyRecords CompetencyRecord[]
+  pseAssessments    PseAssessment[]
+  reflectionEntries ReflectionEntry[]
+  artifactSubmissions ArtifactSubmission[]
+
+  @@map("learner")
+}
+
+model LearnerProfile {
+  id               String       @id @default(uuid())
+  learnerId        String       @unique @map("learner_id")
+  yearsExperience  Int?         @map("years_experience")
+  primaryRole      String?      @map("primary_role")
+  organizationType String?      @map("organization_type")
+  learningPref     LearningPref @default(no_preference) @map("learning_pref")
+  responseType     String?      @map("response_type")
+
+  // Baseline competency scores (0.0–1.0)
+  baselineC1 Float? @map("baseline_c1")
+  baselineC2 Float? @map("baseline_c2")
+  baselineC3 Float? @map("baseline_c3")
+  baselineC4 Float? @map("baseline_c4")
+  baselineC5 Float? @map("baseline_c5")
+
+  // Self-efficacy baseline
+  pseBaseline Float? @map("pse_baseline")
+
+  // Emotion calibration
+  emotionNeutralAu    Json?  @map("emotion_neutral_au")
+  frustrationThreshold Float @default(0.70) @map("frustration_threshold")
+  confusionThreshold   Float @default(0.70) @map("confusion_threshold")
+
+  // Per-module scaffold start level
+  moduleScaffoldStart Json @default("{\"M1\":3,\"M2\":3,\"M3\":3,\"M4\":3,\"M5\":3}") @map("module_scaffold_start")
+
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  learner Learner @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@map("learner_profile")
+}
+
+model ConsentRecord {
+  id                    String    @id @default(uuid())
+  learnerId             String    @map("learner_id")
+  recordedAt            DateTime  @default(now()) @map("recorded_at")
+  consentVersion        String    @default("1.0") @map("consent_version")
+
+  // Required
+  participation    Boolean @default(false)
+  performanceData  Boolean @default(false) @map("performance_data")
+
+  // Optional
+  facialAnalysis      Boolean @default(false) @map("facial_analysis")
+  auDataRetention     Boolean @default(false) @map("au_data_retention")
+  textSentiment       Boolean @default(false) @map("text_sentiment")
+  behavioralTracking  Boolean @default(false) @map("behavioral_tracking")
+  dataSharingResearch Boolean @default(false) @map("data_sharing_research")
+  dataOpenDataset     Boolean @default(false) @map("data_open_dataset")
+  followupContact     Boolean @default(false) @map("followup_contact")
+  dataRetentionYears  Int     @default(5) @map("data_retention_years")
+
+  withdrawalRequestedAt DateTime? @map("withdrawal_requested_at")
+  ipHash                String?   @map("ip_hash")
+  userAgentHash         String?   @map("user_agent_hash")
+
+  learner Learner @relation(fields: [learnerId], references: [id])
+
+  @@map("consent_record")
+}
+
+model AuthCredential {
+  id            String    @id @default(uuid())
+  learnerId     String    @unique @map("learner_id")
+  passwordHash  String    @map("password_hash")
+  lastLogin     DateTime? @map("last_login")
+  refreshToken  String?   @map("refresh_token")
+  tokenExpires  DateTime? @map("token_expires")
+  failedAttempts Int      @default(0) @map("failed_attempts")
+  lockedUntil   DateTime? @map("locked_until")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  learner Learner @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@map("auth_credential")
+}
+
+// ── Module & Scenario Content ─────────────────────────────────
+
+model Module {
+  id                   String  @id
+  title                String
+  description          String?
+  objectives           String[] @default([])
+  primaryCompetency    String? @map("primary_competency")
+  secondaryCompetency  String? @map("secondary_competency")
+  estimatedDurationMin Int?    @map("estimated_duration_min")
+  sessionCount         Int?    @map("session_count")
+  sequenceOrder        Int     @map("sequence_order")
+  isAssessable         Boolean @default(true) @map("is_assessable")
+  status               PublishStatus @default(published)
+
+  episodes          Episode[]
+  quizzes           Quiz[]
+  quizAttempts      QuizAttempt[]
+  moduleProgress    ModuleProgress[]
+  sessions          Session[]
+  competencyRecords CompetencyRecord[]
+  reflectionPrompts ReflectionPrompt[]
+
+  @@map("module")
+}
+
+model Episode {
+  id                          String      @id
+  moduleId                    String      @map("module_id")
+  title                       String
+  description                 String?
+  objectives                  String[]    @default([])
+  sequenceOrder               Int         @map("sequence_order")
+  baseScaffold                Int         @default(3) @map("base_scaffold")
+  expectedDurationMin         Int?        @map("expected_duration_min")
+  emotionalTriggerExpected    AffectState? @map("emotional_trigger_expected")
+  isAdaptive                  Boolean      @default(true) @map("is_adaptive")
+  lessonType                  String       @default("guided") @map("lesson_type")
+  status                      PublishStatus @default(published)
+
+  module          Module             @relation(fields: [moduleId], references: [id])
+  branchingNodes  BranchingNode[]
+  learningContents LearningContent[]
+  quizzes         Quiz[]
+  quizAttempts    QuizAttempt[]
+  reflectionPrompts ReflectionPrompt[]
+  emotionEvents   EmotionEvent[]
+  behaviorWindows BehaviorWindow[]
+  adaptiveEvents  AdaptiveEvent[]
+
+  @@map("episode")
+}
+
+model LearningContent {
+  id             String      @id @default(uuid())
+  episodeId      String      @map("episode_id")
+  contentType    ContentType @map("content_type")
+  adaptiveTag    AdaptiveTag? @map("adaptive_tag")
+  contentData    Json        @map("content_data")
+  scaffoldLevel  Int         @default(3) @map("scaffold_level")
+  isEnrichment   Boolean     @default(false) @map("is_enrichment")
+  sequenceOrder  Int         @default(0) @map("sequence_order")
+  status         PublishStatus @default(published)
+
+  episode         Episode          @relation(fields: [episodeId], references: [id])
+  emotionEvents   EmotionEvent[]
+  behaviorWindows BehaviorWindow[]
+
+  @@map("learning_content")
+}
+
+model Quiz {
+  id                          String   @id @default(uuid())
+  title                       String
+  description                 String?
+  scope                       QuizScope @default(lesson)
+  courseKey                   String?  @map("course_key")
+  moduleId                    String?  @map("module_id")
+  episodeId                   String?  @map("episode_id")
+  passingScore                Int      @default(70) @map("passing_score")
+  attemptLimit                Int      @default(2) @map("attempt_limit")
+  showExplanationAfterSubmit  Boolean  @default(true) @map("show_explanation_after_submit")
+  allowRetry                  Boolean  @default(true) @map("allow_retry")
+  adaptiveOnFail              String?  @map("adaptive_on_fail")
+  adaptiveOnPass              String?  @map("adaptive_on_pass")
+  sequenceOrder               Int      @default(1) @map("sequence_order")
+  isPublished                 Boolean  @default(true) @map("is_published")
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  module    Module?         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  episode   Episode?        @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@index([moduleId, scope, sequenceOrder])
+  @@index([episodeId, scope, sequenceOrder])
+  @@map("quiz")
+}
+
+model QuizQuestion {
+  id            String           @id @default(uuid())
+  quizId        String           @map("quiz_id")
+  questionType  QuizQuestionType @map("question_type")
+  dimension     AssessmentDimension? @map("dimension")
+  questionText  String           @map("question_text")
+  explanation   String?          @map("explanation")
+  hint          String?
+  weight        Int              @default(1)
+  sequenceOrder Int              @default(1) @map("sequence_order")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  quiz      Quiz                 @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  choices   QuizChoice[]
+  attempts  QuizQuestionAttempt[]
+
+  @@index([quizId, sequenceOrder])
+  @@map("quiz_question")
+}
+
+model QuizChoice {
+  id            String   @id @default(uuid())
+  questionId    String   @map("question_id")
+  choiceText    String   @map("choice_text")
+  isCorrect     Boolean  @default(false) @map("is_correct")
+  sequenceOrder Int      @default(1) @map("sequence_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  question QuizQuestion          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  attempts QuizQuestionAttempt[]
+
+  @@index([questionId, sequenceOrder])
+  @@map("quiz_choice")
+}
+
+model BranchingNode {
+  id        String @id @default(uuid())
+  episodeId String @map("episode_id")
+  nodeKey   String @map("node_key")
+  promptText String @map("prompt_text")
+  nodeType  String @map("node_type")
+
+  episode  Episode          @relation(fields: [episodeId], references: [id])
+  outcomes BranchingOutcome[]
+
+  @@unique([episodeId, nodeKey])
+  @@map("branching_node")
+}
+
+model BranchingOutcome {
+  id                String  @id @default(uuid())
+  nodeId            String  @map("node_id")
+  optionLabel       String  @map("option_label")
+  outcomeText       String  @map("outcome_text")
+  stakeholderEffects Json?  @map("stakeholder_effects")
+  nextNodeKey       String? @map("next_node_key")
+  isOptimal         Boolean @default(false) @map("is_optimal")
+  competencySignal  String? @map("competency_signal")
+
+  node BranchingNode @relation(fields: [nodeId], references: [id])
+
+  @@map("branching_outcome")
+}
+
+// ── Session ───────────────────────────────────────────────────
+
+model Session {
+  id            String      @id @default(uuid())
+  learnerId     String      @map("learner_id")
+  moduleId      String      @map("module_id")
+  episodeId     String?     @map("episode_id")
+  startedAt     DateTime    @default(now()) @map("started_at")
+  endedAt       DateTime?   @map("ended_at")
+  durationMin   Float?      @map("duration_min")
+  completionPct Float       @default(0) @map("completion_pct")
+  scaffoldLevel Int         @default(3) @map("scaffold_level")
+  initialAffect AffectState @default(neutral) @map("initial_affect")
+  finalAffect   AffectState? @map("final_affect")
+  isComplete    Boolean     @default(false) @map("is_complete")
+  deviceInfo    Json        @default("{}") @map("device_info")
+  researcherNotes String?   @map("researcher_notes")
+
+  learner         Learner          @relation(fields: [learnerId], references: [id])
+  module          Module           @relation(fields: [moduleId], references: [id])
+  emotionEvents   EmotionEvent[]
+  behaviorWindows BehaviorWindow[]
+  adaptiveEvents  AdaptiveEvent[]
+  quizAttempts    QuizAttempt[]
+  reflectionEntries ReflectionEntry[]
+  artifactSubmissions ArtifactSubmission[]
+
+  @@map("session")
+}
+
+model ModuleProgress {
+  id              String               @id @default(uuid())
+  learnerId       String               @map("learner_id")
+  moduleId        String               @map("module_id")
+  status          ModuleProgressStatus @default(not_started)
+  startedAt       DateTime?            @map("started_at")
+  completedAt     DateTime?            @map("completed_at")
+  attempts        Int                  @default(0)
+  currentScaffold Int                  @default(3) @map("current_scaffold")
+  artifactScore   Float?               @map("artifact_score")
+  gatingPassed    Boolean              @default(false) @map("gating_passed")
+
+  learner Learner @relation(fields: [learnerId], references: [id])
+  module  Module  @relation(fields: [moduleId], references: [id])
+
+  @@unique([learnerId, moduleId], name: "learnerId_moduleId")
+  @@map("module_progress")
+}
+
+model QuizAttempt {
+  id            String            @id @default(uuid())
+  quizId         String            @map("quiz_id")
+  learnerId      String            @map("learner_id")
+  sessionId      String?           @map("session_id")
+  moduleId       String?           @map("module_id")
+  episodeId      String?           @map("episode_id")
+  status         QuizAttemptStatus @default(submitted)
+  startedAt      DateTime          @default(now()) @map("started_at")
+  submittedAt    DateTime?         @map("submitted_at")
+  scorePct       Float?            @map("score_pct")
+  scoreEarned    Float?            @map("score_earned")
+  totalPossible  Float?            @map("total_possible")
+  passed         Boolean?          @map("passed")
+  metadata       Json?             @map("metadata")
+
+  quiz      Quiz                  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  learner   Learner               @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  session   Session?              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  module    Module?               @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  episode   Episode?              @relation(fields: [episodeId], references: [id], onDelete: SetNull)
+  answers   QuizQuestionAttempt[]
+
+  @@index([quizId, submittedAt(sort: Desc)])
+  @@index([learnerId, submittedAt(sort: Desc)])
+  @@index([sessionId, submittedAt(sort: Desc)])
+  @@map("quiz_attempt")
+}
+
+model QuizQuestionAttempt {
+  id               String   @id @default(uuid())
+  attemptId        String   @map("attempt_id")
+  questionId       String   @map("question_id")
+  selectedChoiceId String?  @map("selected_choice_id")
+  isCorrect        Boolean? @map("is_correct")
+  earnedScore      Float?   @map("earned_score")
+  submittedAt      DateTime @default(now()) @map("submitted_at")
+
+  attempt        QuizAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       QuizQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedChoice QuizChoice?   @relation(fields: [selectedChoiceId], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@map("quiz_question_attempt")
+}
+
+// ── Emotion & Behaviour ───────────────────────────────────────
+// Note: emotion_event is converted to TimescaleDB hypertable post-migration
+
+model EmotionEvent {
+  id                      String      @id @default(uuid())
+  time                    DateTime    @default(now())
+  sessionId               String      @map("session_id")
+  learnerId               String      @map("learner_id")
+  episodeId               String?     @map("episode_id")
+  au1                     Float?
+  au4                     Float?
+  au6                     Float?
+  au12                    Float?
+  au20                    Float?
+  au23                    Float?
+  auConfidence            Float?      @map("au_confidence")
+  classifiedState         AffectState @default(no_face_low_confidence) @map("classified_state")
+  classificationConfidence Float?     @map("classification_confidence")
+  isBelowThreshold        Boolean     @default(false) @map("is_below_threshold")
+  contentId               String?     @map("content_id")
+
+  session  Session  @relation(fields: [sessionId], references: [id])
+  learner  Learner  @relation(fields: [learnerId], references: [id])
+  episode  Episode? @relation(fields: [episodeId], references: [id])
+  content  LearningContent? @relation(fields: [contentId], references: [id])
+
+  @@index([learnerId, time(sort: Desc)])
+  @@index([sessionId, time(sort: Desc)])
+  @@index([contentId])
+  @@map("emotion_event")
+}
+
+model BehaviorWindow {
+  id                   String      @id @default(uuid())
+  sessionId            String      @map("session_id")
+  learnerId            String      @map("learner_id")
+  episodeId            String?     @map("episode_id")
+  windowStart          DateTime    @map("window_start")
+  windowEnd            DateTime    @map("window_end")
+  dwellTimeSec         Float       @default(0) @map("dwell_time_sec")
+  scrollEvents         Int         @default(0) @map("scroll_events")
+  rereadCount          Int         @default(0) @map("reread_count")
+  clickCount           Int         @default(0) @map("click_count")
+  clickRatePerMin      Float?      @map("click_rate_per_min")
+  taskProgressPct      Float       @default(0) @map("task_progress_pct")
+  pageReturns          Int         @default(0) @map("page_returns")
+  hintRequests         Int         @default(0) @map("hint_requests")
+  abandonmentAttempts  Int         @default(0) @map("abandonment_attempts")
+  typingRateWpm        Float?      @map("typing_rate_wpm")
+  backspaceRatio       Float?      @map("backspace_ratio")
+  derivedAffectSignal  AffectState? @map("derived_affect_signal")
+  dwellExceedsThreshold Boolean   @default(false) @map("dwell_exceeds_threshold")
+  contentId            String?     @map("content_id")
+
+  session  Session  @relation(fields: [sessionId], references: [id])
+  learner  Learner  @relation(fields: [learnerId], references: [id])
+  episode  Episode? @relation(fields: [episodeId], references: [id])
+  content  LearningContent? @relation(fields: [contentId], references: [id])
+
+  @@index([sessionId, windowStart(sort: Desc)])
+  @@index([contentId])
+  @@map("behavior_window")
+}
+
+// ── Adaptive Engine ───────────────────────────────────────────
+
+model AdaptiveEvent {
+  id                  String           @id @default(uuid())
+  sessionId           String           @map("session_id")
+  learnerId           String           @map("learner_id")
+  episodeId           String?          @map("episode_id")
+  occurredAt          DateTime         @default(now()) @map("occurred_at")
+  triggerType         String           @map("trigger_type")
+  triggerPriority     Int              @default(2) @map("trigger_priority")
+  affectStatePre      AffectState      @map("affect_state_pre")
+  behaviorSnapshot    Json             @map("behavior_snapshot")
+  intervention        InterventionType
+  contentId           String?          @map("content_id")
+  scaffoldFrom        Int?             @map("scaffold_from")
+  scaffoldTo          Int?             @map("scaffold_to")
+  learnerResponse     String?          @map("learner_response")
+  responseLatencySec  Float?           @map("response_latency_sec")
+  affectStatePost     AffectState?     @map("affect_state_post")
+  wasEffective        Boolean?         @map("was_effective")
+
+  session  Session  @relation(fields: [sessionId], references: [id])
+  learner  Learner  @relation(fields: [learnerId], references: [id])
+  episode  Episode? @relation(fields: [episodeId], references: [id])
+
+  @@index([learnerId, occurredAt(sort: Desc)])
+  @@index([triggerType, intervention])
+  @@map("adaptive_event")
+}
+
+// ── Assessment & Competency ───────────────────────────────────
+
+model Assessment {
+  id          String         @id @default(uuid())
+  learnerId   String         @map("learner_id")
+  form        AssessmentForm
+  courseKey   String?        @map("course_key")
+  quizId      String?        @map("quiz_id")
+  quizAttemptId String?      @map("quiz_attempt_id")
+  cohortSnapshot CohortType? @map("cohort_snapshot")
+  startedAt   DateTime       @default(now()) @map("started_at")
+  submittedAt DateTime?      @map("submitted_at")
+  isComplete  Boolean        @default(false) @map("is_complete")
+  responsePayload Json?      @map("response_payload")
+  questionCount Int?         @map("question_count")
+  correctCount Int?          @map("correct_count")
+  scoreS1     Int?           @map("score_s1")
+  scoreS2     Int?           @map("score_s2")
+  scoreS3     Int?           @map("score_s3")
+  scoreS4     Int?           @map("score_s4")
+  scoreS5     Int?           @map("score_s5")
+  totalScore  Float?         @map("total_score")
+  raterAId    String?        @map("rater_a_id")
+  raterBId    String?        @map("rater_b_id")
+  irrKappa    Float?         @map("irr_kappa")
+
+  learner           Learner           @relation(fields: [learnerId], references: [id])
+  competencyRecords CompetencyRecord[]
+
+  @@unique([learnerId, form])
+  @@map("assessment")
+}
+
+model CompetencyRecord {
+  id           String          @id @default(uuid())
+  learnerId    String          @map("learner_id")
+  recordedAt   DateTime        @default(now()) @map("recorded_at")
+  source       CompetencySource
+  moduleId     String?         @map("module_id")
+  assessmentId String?         @map("assessment_id")
+  c1           Float?
+  c2           Float?
+  c3           Float?
+  c4           Float?
+  c5           Float?
+  composite    Float?
+
+  learner    Learner     @relation(fields: [learnerId], references: [id])
+  module     Module?     @relation(fields: [moduleId], references: [id])
+  assessment Assessment? @relation(fields: [assessmentId], references: [id])
+
+  @@index([learnerId, recordedAt(sort: Desc)])
+  @@map("competency_record")
+}
+
+model PseAssessment {
+  id            String   @id @default(uuid())
+  learnerId     String   @map("learner_id")
+  administeredAt DateTime @default(now()) @map("administered_at")
+  wave          String
+  responses     Json
+  totalScore    Float?   @map("total_score")
+
+  learner Learner @relation(fields: [learnerId], references: [id])
+
+  @@unique([learnerId, wave])
+  @@map("pse_assessment")
+}
+
+// ── Reflections ───────────────────────────────────────────────
+
+model ReflectionPrompt {
+  id           String  @id
+  moduleId     String? @map("module_id")
+  episodeId    String? @map("episode_id")
+  promptText   String  @map("prompt_text")
+  minWords     Int     @default(150) @map("min_words")
+  maxWords     Int     @default(300) @map("max_words")
+  sequenceOrder Int?   @map("sequence_order")
+
+  module  Module?  @relation(fields: [moduleId], references: [id])
+  episode Episode? @relation(fields: [episodeId], references: [id])
+  entries ReflectionEntry[]
+
+  @@map("reflection_prompt")
+}
+
+model ReflectionEntry {
+  id                   String          @id @default(uuid())
+  sessionId            String          @map("session_id")
+  learnerId            String          @map("learner_id")
+  promptId             String          @map("prompt_id")
+  submittedAt          DateTime        @default(now()) @map("submitted_at")
+  responseText         String          @map("response_text")
+  wordCount            Int?            @map("word_count")
+  sentimentValence     Float?          @map("sentiment_valence")
+  sentimentArousal     Float?          @map("sentiment_arousal")
+  reflectionDepth      ReflectionDepth? @map("reflection_depth")
+  selfRegMarkers       String[]        @map("self_reg_markers")
+  competencyConcepts   String[]        @map("competency_concepts")
+  reflectionScore      Float?          @map("reflection_score")
+  autoFeedback         Json?           @map("auto_feedback")
+  analysisModelVersion String?         @map("analysis_model_version")
+
+  session Session          @relation(fields: [sessionId], references: [id])
+  learner Learner          @relation(fields: [learnerId], references: [id])
+  prompt  ReflectionPrompt @relation(fields: [promptId], references: [id])
+
+  @@map("reflection_entry")
+}
+
+// ── Artifact Submissions ──────────────────────────────────────
+
+model ArtifactSubmission {
+  id            String   @id @default(uuid())
+  learnerId     String   @map("learner_id")
+  sessionId     String   @map("session_id")
+  episodeId     String   @map("episode_id")
+  artifactType  String   @map("artifact_type")
+  submittedAt   DateTime @default(now()) @map("submitted_at")
+  artifactData  Json     @map("artifact_data")
+  attemptNumber Int      @default(1) @map("attempt_number")
+  autoScore     Float?   @map("auto_score")
+  autoFeedback  Json?    @map("auto_feedback")
+  rubricScore   Float?   @map("rubric_score")
+  rubricFeedback String? @map("rubric_feedback")
+  scorerId      String?  @map("scorer_id")
+  scoredAt      DateTime? @map("scored_at")
+
+  learner  Learner @relation(fields: [learnerId], references: [id])
+  session  Session @relation(fields: [sessionId], references: [id])
+
+  @@map("artifact_submission")
+}
+
+// Research-grade doctoral control schema
+
+model AdaptiveTagDefinition {
+  id                String   @id @default(uuid())
+  tagKey            String   @unique @map("tag_key")
+  label             String
+  description       String?
+  triggerStates     String[] @default([]) @map("trigger_states")
+  priority          Int      @default(2)
+  fallbackBehavior  String?  @map("fallback_behavior")
+  displayConditions Json?    @map("display_conditions")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("adaptive_tag")
+}
+
+model ScenarioRuleConfig {
+  id                  String   @id @default(uuid())
+  ruleKey             String   @unique @map("rule_key")
+  name                String
+  triggerEmotion      String   @map("trigger_emotion")
+  minConfidence       Float?   @map("min_confidence")
+  minEngagementScore  Float?   @map("min_engagement_score")
+  maxEngagementScore  Float?   @map("max_engagement_score")
+  maxInactivityMs     Int?     @map("max_inactivity_ms")
+  maxFailedAttempts   Int?     @map("max_failed_attempts")
+  maxRepeatedErrors   Int?     @map("max_repeated_errors")
+  minTaskProgressPct  Float?   @map("min_task_progress_pct")
+  durationWindowSec   Int?     @map("duration_window_sec")
+  priority            Int      @default(2)
+  isActive            Boolean  @default(true) @map("is_active")
+  fallbackActionKey   String?  @map("fallback_action_key")
+  explainabilityNotes String?  @map("explainability_notes")
+  metadata            Json?    @map("metadata")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("scenario_rule")
+}
+
+model ScenarioActionConfig {
+  id                    String   @id @default(uuid())
+  actionKey             String   @unique @map("action_key")
+  scenarioRuleKey       String?  @map("scenario_rule_key")
+  pedagogicalAction     String   @map("pedagogical_action")
+  contentType           String?  @map("content_type")
+  badgeKey              String?  @map("badge_key")
+  difficultyDelta       Int?     @map("difficulty_delta")
+  scaffoldDelta         Int?     @map("scaffold_delta")
+  pauseContent          Boolean  @default(false) @map("pause_content")
+  requestInteraction    Boolean  @default(false) @map("request_interaction")
+  explainabilityNotes   String?  @map("explainability_notes")
+  metadata              Json?    @map("metadata")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("scenario_action")
+}
+
+model EngagementSnapshotRecord {
+  id                String   @id @default(uuid())
+  participantId     String   @map("participant_id") @db.VarChar(20)
+  sessionId         String   @map("session_id")
+  moduleId          String?  @map("module_id")
+  lessonId          String?  @map("lesson_id")
+  activityId        String?  @map("activity_id")
+  capturedAt        DateTime @default(now()) @map("captured_at")
+  engagementLevel   String   @map("engagement_level")
+  emotionConfidence Float?   @map("emotion_confidence")
+  engagementScore   Float?   @map("engagement_score")
+  interactionRate   Float?   @map("interaction_rate")
+  inactivityMs      Int?     @map("inactivity_ms")
+  passiveExposureSec Float?  @map("passive_exposure_sec")
+  metadata          Json?    @map("metadata")
+
+  @@index([participantId, capturedAt(sort: Desc)])
+  @@index([sessionId, capturedAt(sort: Desc)])
+  @@map("engagement_snapshot")
+}
+
+model InterventionLogRecord {
+  id                     String   @id @default(uuid())
+  participantId          String   @map("participant_id") @db.VarChar(20)
+  sessionId              String   @map("session_id")
+  moduleId               String?  @map("module_id")
+  lessonId               String?  @map("lesson_id")
+  activityId             String?  @map("activity_id")
+  occurredAt             DateTime @default(now()) @map("occurred_at")
+  detectedEmotion        String   @map("detected_emotion")
+  confidence             Float?   @map("confidence")
+  matchedScenario        String?  @map("matched_scenario")
+  chosenAction           String   @map("chosen_action")
+  learnerStateAfterAction String? @map("learner_state_after_action")
+  pedagogicalExplanation String?  @map("pedagogical_explanation")
+  wasEffective           Boolean? @map("was_effective")
+  metadata               Json?    @map("metadata")
+
+  @@index([participantId, occurredAt(sort: Desc)])
+  @@index([sessionId, occurredAt(sort: Desc)])
+  @@map("intervention_log")
+}
+
+model ActivityLogRecord {
+  id            String   @id @default(uuid())
+  participantId String   @map("participant_id") @db.VarChar(20)
+  sessionId     String   @map("session_id")
+  moduleId      String?  @map("module_id")
+  lessonId      String?  @map("lesson_id")
+  activityId    String?  @map("activity_id")
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+  eventType     String   @map("event_type")
+  eventName     String   @map("event_name")
+  actorRole     String?  @map("actor_role")
+  metadata      Json?    @map("metadata")
+
+  @@index([participantId, occurredAt(sort: Desc)])
+  @@index([sessionId, occurredAt(sort: Desc)])
+  @@map("activity_log")
+}
+
+model AssessmentAttemptRecord {
+  id             String   @id @default(uuid())
+  assessmentId   String   @map("assessment_id")
+  participantId  String   @map("participant_id") @db.VarChar(20)
+  sessionId      String?  @map("session_id")
+  attemptIndex   Int      @default(1) @map("attempt_index")
+  startedAt      DateTime @default(now()) @map("started_at")
+  submittedAt    DateTime? @map("submitted_at")
+  score          Float?   @map("score")
+  latencySec     Float?   @map("latency_sec")
+  emotionalState String?  @map("emotional_state")
+  metadata       Json?    @map("metadata")
+
+  @@index([participantId, startedAt(sort: Desc)])
+  @@map("assessment_attempt")
+}
+
+model BadgeDefinition {
+  id          String   @id @default(uuid())
+  badgeKey    String   @unique @map("badge_key")
+  label       String
+  description String?
+  iconName    String?  @map("icon_name")
+  triggerRuleKey String? @map("trigger_rule_key")
+  metadata    Json?    @map("metadata")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("badge")
+}
+
+model TimelineHeatmapRecord {
+  id                String   @id @default(uuid())
+  participantId     String   @map("participant_id") @db.VarChar(20)
+  sessionId         String   @map("session_id")
+  moduleId          String?  @map("module_id")
+  lessonId          String?  @map("lesson_id")
+  activityId        String?  @map("activity_id")
+  capturedAt        DateTime @default(now()) @map("captured_at")
+  detectedEmotion   String   @map("detected_emotion")
+  confidence        Float?   @map("confidence")
+  engagementLevel   String?  @map("engagement_level")
+  adaptiveAction    String?  @map("adaptive_action")
+  postActionOutcome String?  @map("post_action_outcome")
+  metadata          Json?    @map("metadata")
+
+  @@index([participantId, capturedAt(sort: Desc)])
+  @@index([sessionId, capturedAt(sort: Desc)])
+  @@map("timeline_heatmap")
+}
+
+model AdminSimulationRecord {
+  id                String   @id @default(uuid())
+  participantId     String?  @map("participant_id") @db.VarChar(20)
+  sessionId         String?  @map("session_id")
+  lessonId          String?  @map("lesson_id")
+  activityId        String?  @map("activity_id")
+  simulatedEmotion  String   @map("simulated_emotion")
+  matchedScenario   String?  @map("matched_scenario")
+  thresholdSnapshot Json?    @map("threshold_snapshot")
+  previewPayload    Json?    @map("preview_payload")
+  researcherId      String?  @map("researcher_id")
+  metadata          Json?    @map("metadata")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@map("admin_simulation")
+}
+
+model ResearchExportRecord {
+  id           String   @id @default(uuid())
+  participantId String? @map("participant_id") @db.VarChar(20)
+  sessionId    String?  @map("session_id")
+  exportType   String   @map("export_type")
+  exportFormat String   @map("export_format")
+  requestedBy  String?  @map("requested_by")
+  filterParams Json?    @map("filter_params")
+  status       String   @default("generated") @map("status")
+  fileName     String?  @map("file_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  completedAt  DateTime? @map("completed_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@map("research_export")
+}

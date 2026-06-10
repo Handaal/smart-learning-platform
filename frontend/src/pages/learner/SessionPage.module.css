@@ -1,0 +1,532 @@
+.page {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  animation: fadeUp 0.3s ease both;
+}
+
+.hiddenVideo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.header,
+.player,
+.supportCard,
+.navigationBar,
+.outlineDrawer,
+.outlineSection {
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+.header {
+  padding: clamp(18px, 2.4vw, 28px);
+  display: grid;
+  gap: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(18, 148, 139, 0.1), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(31, 111, 176, 0.09), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 244, 0.98));
+}
+
+.headerTop,
+.headerMain,
+.headerBadges,
+.progressMeta,
+.outlineHead,
+.stepHeader,
+.stepMeta,
+.supportHead,
+.supportMeta,
+.navigationBar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.headerTop,
+.headerMain,
+.outlineHead,
+.stepHeader,
+.supportHead,
+.navigationBar {
+  justify-content: space-between;
+}
+
+.headerTop {
+  justify-content: flex-start;
+}
+
+.moduleEyebrow,
+.stepEyebrow,
+.progressMeta,
+.lessonItem p,
+.stepItem p,
+.supportMeta,
+.navigationCenter span {
+  color: var(--color-text-3);
+  font-size: 0.82rem;
+}
+
+.moduleEyebrow,
+.stepEyebrow {
+  font-weight: 700;
+}
+
+.headerMain {
+  align-items: flex-start;
+}
+
+.lessonTitleWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.lessonTitleWrap h1,
+.stepHeader h2,
+.outlineSection h3 {
+  margin: 0;
+}
+
+.lessonTitleWrap p,
+.supportCard p,
+.emptyState {
+  margin: 0;
+  color: var(--color-text-2);
+  line-height: 1.75;
+  max-width: none;
+}
+
+.progressStrip {
+  display: grid;
+  gap: 8px;
+}
+
+.progressMeta {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.progressTrack {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(36, 49, 63, 0.08);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-blue));
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.main {
+  display: grid;
+  gap: 14px;
+}
+
+.stepStage {
+  display: grid;
+  gap: 16px;
+  animation: stepStageIn 0.18s ease;
+}
+
+.player {
+  padding: clamp(16px, 2vw, 24px);
+  display: grid;
+  gap: 16px;
+}
+
+.stepHeader {
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stepHeader > div:first-child {
+  display: grid;
+  gap: 8px;
+}
+
+.stepReadyCue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(20, 129, 91, 0.1);
+  color: var(--color-success);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: cuePulse 0.9s ease both;
+}
+
+.stepStateCard,
+.completionCard,
+.telemetryNote {
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.stepStateCard,
+.completionCard {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.stepStateneutral {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 251, 255, 0.96));
+}
+
+.stepStatesuccess {
+  border-color: rgba(20, 129, 91, 0.18);
+  background: linear-gradient(180deg, rgba(243, 251, 248, 0.98), rgba(255, 255, 255, 0.96));
+}
+
+.stepStatewarning {
+  border-color: rgba(191, 122, 22, 0.2);
+  background: linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(255, 255, 255, 0.96));
+}
+
+.stepStatesupport {
+  border-color: rgba(18, 148, 139, 0.2);
+  background: linear-gradient(180deg, rgba(240, 250, 248, 0.98), rgba(255, 255, 255, 0.96));
+}
+
+.stepStateinfo {
+  border-color: rgba(31, 111, 176, 0.2);
+  background: linear-gradient(180deg, rgba(244, 249, 255, 0.98), rgba(255, 255, 255, 0.96));
+}
+
+.stepStateHeader {
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.stepStateHeader h3 {
+  margin: 6px 0 0;
+}
+
+.stepStateEyebrow {
+  color: var(--color-text-3);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.stepStateBadges {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.stepStateLead,
+.stepStateBlock p,
+.completionCard p,
+.telemetryNote {
+  margin: 0;
+  color: var(--color-text-2);
+  line-height: 1.7;
+  max-width: none;
+}
+
+.stepStateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.stepStateBlock {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(36, 49, 63, 0.08);
+}
+
+.stepStateBlock span {
+  color: var(--color-text-3);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.completionHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.completionHead h3 {
+  margin: 6px 0 0;
+}
+
+.completionIcon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: var(--color-accent-blue);
+  background: rgba(31, 111, 176, 0.1);
+  flex-shrink: 0;
+}
+
+.completionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.supportArea {
+  display: grid;
+  gap: 10px;
+}
+
+.supportCard {
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+  border-radius: 18px;
+}
+
+.supportMeta {
+  flex-wrap: wrap;
+}
+
+.navigationBar {
+  padding: 14px;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  position: static;
+}
+
+.navigationCenter {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+  min-width: 200px;
+}
+
+.navigationCenter strong {
+  font-size: 0.92rem;
+}
+
+.navigationCenter p {
+  margin: 0;
+  color: var(--color-text-2);
+  line-height: 1.55;
+  max-width: none;
+}
+
+.quizGuard {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 137, 26, 0.28);
+  background: rgba(201, 137, 26, 0.1);
+  color: #805616;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.telemetryNote {
+  padding: 12px 14px;
+  font-size: 0.84rem;
+}
+
+.emptyState {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px dashed var(--color-border);
+  background: rgba(255, 255, 255, 0.84);
+  text-align: center;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 24, 36, 0.25);
+  z-index: 40;
+}
+
+.outlineDrawer {
+  position: fixed;
+  top: calc(var(--header-height) + 8px);
+  left: 12px;
+  bottom: 12px;
+  width: min(360px, calc(100vw - 24px));
+  z-index: 50;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  overflow: auto;
+  transform: translateX(-115%);
+  transition: transform var(--transition-slow);
+}
+
+.outlineDrawerOpen {
+  transform: translateX(0);
+}
+
+.outlineSection {
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  border-radius: 16px;
+}
+
+.lessonList,
+.stepList {
+  display: grid;
+  gap: 8px;
+}
+
+.lessonItem,
+.stepItem {
+  width: 100%;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lessonItem:disabled,
+.stepItem:disabled {
+  cursor: not-allowed;
+}
+
+.lessonItemActive,
+.stepItemActive {
+  border-color: rgba(18, 148, 139, 0.28);
+  background: rgba(18, 148, 139, 0.08);
+}
+
+.lessonItemLocked,
+.stepItemLocked {
+  opacity: 0.62;
+  background: rgba(245, 245, 245, 0.92);
+}
+
+.lessonItem strong,
+.stepItem strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.lessonIndex,
+.stepIndex {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(36, 49, 63, 0.08);
+  color: var(--color-text);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.lessonIndexDone,
+.stepIndexDone {
+  background: rgba(20, 129, 91, 0.12);
+  color: var(--color-success);
+}
+
+@keyframes stepStageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cuePulse {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.98);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0.82;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 980px) {
+  .headerMain,
+  .stepHeader,
+  .stepStateHeader,
+  .navigationBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .navigationBar :global(.btn) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    gap: 14px;
+  }
+
+  .header,
+  .player,
+  .supportCard,
+  .navigationBar,
+  .outlineDrawer,
+  .outlineSection {
+    border-radius: 20px;
+    padding: 14px;
+  }
+
+  .progressMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stepStateGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .completionHead {
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,284 @@
+.section {
+  display: grid;
+  gap: 14px;
+}
+
+.assessmentTypes {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.assessmentTypeCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-soft);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.assessmentTypeCard strong {
+  font-size: 0.9rem;
+}
+
+.assessmentTypeCard span {
+  color: var(--color-text-3);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.assessmentTypeCard p {
+  margin: 0;
+  color: var(--color-text-2);
+  line-height: 1.6;
+  font-size: 0.84rem;
+}
+
+.sectionHead,
+.quizHeader,
+.questionHeader,
+.modalHead,
+.choiceEditorHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.eyebrow {
+  color: var(--color-text-3);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quizList,
+.questionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.quizCard,
+.questionCard {
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-sm);
+}
+
+.quizCard {
+  display: grid;
+  gap: 16px;
+}
+
+.quizIdentity,
+.questionIdentity,
+.quizMeta,
+.questionMeta,
+.questionNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quizIdentity,
+.questionIdentity {
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.quizIdentity h3,
+.questionIdentity strong {
+  margin: 6px 0 0;
+  display: block;
+}
+
+.quizIdentity p {
+  margin: 8px 0 0;
+  color: var(--color-text-2);
+}
+
+.dragHandle {
+  opacity: 0.42;
+  flex-shrink: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.quizStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quizStats div {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(244, 239, 228, 0.6);
+}
+
+.quizStats span {
+  color: var(--color-text-3);
+  font-size: 0.8rem;
+}
+
+.questionCard {
+  display: grid;
+  gap: 14px;
+  background: rgba(252, 249, 243, 0.9);
+}
+
+.choiceList {
+  display: grid;
+  gap: 8px;
+}
+
+.choiceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--color-border-soft);
+}
+
+.choiceCorrect {
+  border-color: rgba(20, 129, 91, 0.22);
+  background: rgba(20, 129, 91, 0.08);
+  color: var(--color-success);
+}
+
+.questionNote {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(31, 111, 176, 0.08);
+  color: var(--color-text-2);
+}
+
+.emptyState {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  padding: 20px;
+  text-align: center;
+  border-radius: 20px;
+  border: 1px dashed var(--color-border);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--color-text-3);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.checkGrid {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.checkboxField,
+.booleanChoice {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.choiceEditor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+  background: rgba(244, 239, 228, 0.5);
+}
+
+.choiceEditorHead span {
+  color: var(--color-text-3);
+  font-size: 0.84rem;
+}
+
+.choiceEditorRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.booleanGroup {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+  background: rgba(244, 239, 228, 0.5);
+}
+
+.modalActions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+:global([dir='rtl']) .actions,
+:global([dir='rtl']) .modalActions {
+  justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+  .quizHeader,
+  .questionHeader,
+  .modalHead {
+    flex-direction: column;
+  }
+
+  .quizStats,
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .assessmentTypes {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .quizCard,
+  .questionCard {
+    padding: 16px;
+  }
+
+  .quizStats,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .modalActions {
+    justify-content: stretch;
+  }
+
+  .actions :global(.btn),
+  .modalActions :global(.btn) {
+    width: 100%;
+  }
+}

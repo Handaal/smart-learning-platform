@@ -1,0 +1,53 @@
+.root {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(18, 148, 139, 0.09), transparent 24%),
+    linear-gradient(180deg, rgba(255, 250, 244, 0.72), rgba(244, 239, 228, 0.96)),
+    var(--color-bg);
+}
+
+.main {
+  min-height: 100vh;
+  margin-inline-start: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  width: min(100%, 1680px);
+  margin-inline: auto;
+  padding: clamp(16px, 2vw, 28px);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: rgba(17, 24, 39, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+  z-index: 140;
+}
+
+.backdropVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 1080px) {
+  .main {
+    margin-inline-start: 0;
+  }
+
+  .content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 12px;
+  }
+}

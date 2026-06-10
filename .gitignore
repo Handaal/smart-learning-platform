@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Python cache and virtualenvs
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Runtime and editor artifacts
+.codex-runtime/
+artifacts/
+*.log
+*.err.log
+*.out.log
+
+# OS / local temp files
+.DS_Store
+Thumbs.db
+
+# Large local binaries / accidental files
+/java-25-openjdk-25.0.2.0.10-3.portable.jdk.x86_64 (1).tar.xz
+/package-lock.json
+/{
+/{console.error(e)

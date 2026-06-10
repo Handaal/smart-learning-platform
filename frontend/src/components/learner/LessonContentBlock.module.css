@@ -1,0 +1,238 @@
+.block {
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 2vw, 26px);
+  border-radius: 28px;
+  border: 1px solid rgba(215, 200, 175, 0.84);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 244, 0.98));
+  box-shadow: var(--shadow-sm);
+}
+
+.adaptiveBlock {
+  border-color: rgba(18, 148, 139, 0.22);
+  background:
+    radial-gradient(circle at top right, rgba(18, 148, 139, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 251, 249, 0.98));
+}
+
+.header,
+.assessmentActions,
+.noteBox,
+.assessmentIntro {
+  display: flex;
+  gap: 12px;
+}
+
+.header {
+  align-items: flex-start;
+}
+
+.heading {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.leadBadge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(18, 148, 139, 0.1);
+  color: var(--color-accent-2);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.08rem, 2vw, 1.3rem);
+}
+
+.body {
+  display: grid;
+  gap: 14px;
+}
+
+.body p,
+.caption,
+.question,
+.noteBox span {
+  color: var(--color-text-2);
+  line-height: 1.85;
+  max-width: none;
+}
+
+.body p {
+  max-width: 68ch;
+}
+
+.mediaSection {
+  display: grid;
+  gap: 14px;
+}
+
+.image,
+.video,
+.videoFrame,
+.documentFrame,
+.placeholder {
+  width: 100%;
+  min-height: clamp(220px, 36vw, 420px);
+  border-radius: 22px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-2);
+}
+
+.image,
+.video {
+  object-fit: cover;
+}
+
+.videoFrame,
+.documentFrame {
+  border: 0;
+  background: #fff;
+}
+
+.documentFrame {
+  min-height: clamp(320px, 52vw, 680px);
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  text-align: center;
+  color: var(--color-text-3);
+}
+
+.caption {
+  font-size: 0.95rem;
+}
+
+.assessmentCard {
+  display: grid;
+  gap: 16px;
+  padding: clamp(16px, 2vw, 20px);
+  border-radius: 22px;
+  background: rgba(244, 239, 228, 0.52);
+  border: 1px solid var(--color-border-soft);
+}
+
+.assessmentIntro {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assessmentLabel {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(31, 111, 176, 0.1);
+  color: var(--color-accent-blue);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.question {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+}
+
+.optionButton,
+.responseBox {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: #fff;
+  font: inherit;
+}
+
+.optionButton {
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.optionButton:hover {
+  border-color: rgba(18, 148, 139, 0.24);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.optionButtonActive {
+  background: rgba(18, 148, 139, 0.08);
+  border-color: rgba(18, 148, 139, 0.28);
+}
+
+.responseBox {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.assessmentActions {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.completionArea {
+  display: flex;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.helperText {
+  color: var(--color-text-2);
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.successPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(20, 129, 91, 0.1);
+  color: var(--color-success);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.noteBox {
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(201, 137, 26, 0.08);
+  color: var(--color-text);
+}
+
+@media (max-width: 640px) {
+  .completionArea {
+    width: 100%;
+  }
+
+  .completionArea :global(.btn) {
+    width: 100%;
+  }
+
+  .assessmentActions {
+    align-items: stretch;
+  }
+
+  .assessmentActions :global(.btn) {
+    width: 100%;
+  }
+}

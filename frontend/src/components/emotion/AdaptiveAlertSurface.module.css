@@ -1,0 +1,157 @@
+.surface {
+  border: 1px solid rgba(27, 89, 124, 0.14);
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(248, 244, 236, 0.95));
+  border-radius: 24px;
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 18px 40px rgba(54, 46, 31, 0.08);
+  color: #243649;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #0f7a78;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.message {
+  margin: 0.55rem 0 0;
+  line-height: 1.8;
+  color: #51616e;
+}
+
+.meta {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.metaBlock strong {
+  display: block;
+  font-size: 0.84rem;
+  color: #1a4661;
+  margin-bottom: 0.2rem;
+}
+
+.metaBlock p {
+  margin: 0;
+  color: #5b6e7d;
+  line-height: 1.7;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.choiceButton {
+  border: 1px solid rgba(27, 89, 124, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  color: #183247;
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dismiss {
+  border: 0;
+  background: transparent;
+  color: #7f8c98;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.details {
+  margin-top: 0.95rem;
+  border-top: 1px dashed rgba(27, 89, 124, 0.2);
+  padding-top: 0.85rem;
+}
+
+.summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #1f5f89;
+}
+
+.sidePanel {
+  border-inline-start: 6px solid #1c8b84;
+}
+
+.miniTaskStrip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.popupCard {
+  max-width: 46rem;
+  margin-inline: auto;
+  border-color: rgba(157, 114, 23, 0.18);
+}
+
+.advancedPath {
+  background: linear-gradient(135deg, rgba(12, 104, 111, 0.12), rgba(255, 247, 230, 0.94));
+}
+
+.informationWindow {
+  border-color: rgba(55, 118, 182, 0.18);
+  background: linear-gradient(180deg, rgba(245, 250, 255, 0.98), rgba(238, 246, 255, 0.95));
+}
+
+.standardPath {
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.operationalSafetyProtocol {
+  border-color: rgba(121, 102, 34, 0.24);
+  background: linear-gradient(180deg, rgba(255, 251, 241, 0.98), rgba(250, 245, 232, 0.98));
+}
+
+@media (max-width: 760px) {
+  .surface {
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .miniTaskStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .choices {
+    flex-direction: column;
+  }
+
+  .choiceButton,
+  .actions :global(button) {
+    width: 100%;
+  }
+}

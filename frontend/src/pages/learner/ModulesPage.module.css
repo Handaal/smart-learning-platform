@@ -1,0 +1,134 @@
+.page { display: flex; flex-direction: column; gap: var(--space-6); animation: fadeUp 0.3s ease both; }
+.pageHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-6); }
+.pageHeader h1 { margin-bottom: var(--space-1); }
+.pageHeader p  { color: var(--color-text-2); font-size: 0.9375rem; max-width: none; }
+.loading       { color: var(--color-text-2); font-size: 0.9rem; }
+.grid          { display: flex; flex-direction: column; gap: 0; }
+
+/* Overall progress ring */
+.overallProgress {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  flex-shrink: 0;
+}
+.progressLabel { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--color-text-3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.progressRing { position: relative; width: 64px; height: 64px; }
+.progressCircle { width: 100%; height: 100%; transform: rotate(-90deg); }
+.progressBg { fill: none; stroke: var(--color-surface-3); stroke-width: 3; }
+.progressValue { fill: none; stroke: var(--color-accent-2); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 1s ease; }
+.progressPct { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.875rem; font-weight: 700; font-family: var(--font-heading); }
+.progressSub { font-size: 0.75rem; color: var(--color-text-3); }
+
+/* Module card */
+.card {
+  display: flex; align-items: flex-start; gap: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  animation: fadeUp 0.4s ease both;
+  margin-bottom: 0;
+}
+.card:not(.locked):hover { border-color: var(--color-accent); box-shadow: var(--shadow-md); transform: translateX(4px); }
+.card.completed { border-left: 3px solid var(--color-success); }
+.locked { opacity: 0.5; cursor: not-allowed; }
+
+/* Module number with connector */
+.moduleNumWrap {
+  display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
+}
+.moduleNum {
+  font-family: var(--font-heading);
+  font-size: 1.125rem; font-weight: 700;
+  color: var(--color-text-3);
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--color-surface-2);
+  border: 2px solid var(--color-border);
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+.moduleNumDone {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.moduleNumActive {
+  background: var(--color-accent-glow);
+  border-color: var(--color-accent-2);
+  color: var(--color-accent-2);
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+.connector {
+  width: 2px; height: 24px;
+  background: var(--color-border);
+  margin: 4px 0;
+  transition: background var(--transition-normal);
+}
+.connectorDone {
+  background: var(--color-success);
+}
+
+.info { flex: 1; min-width: 0; }
+.cardTop { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); align-items: center; flex-wrap: wrap; }
+.title { font-size: 1.0625rem; font-weight: 600; margin-bottom: var(--space-2); }
+.desc  { font-size: 0.875rem; color: var(--color-text-2); margin-bottom: var(--space-3); max-width: 55ch; line-height: 1.55; }
+
+.hintText {
+  margin: 0 0 var(--space-3);
+  font-size: 0.82rem;
+  color: var(--color-text-3);
+  line-height: 1.55;
+  max-width: 52ch;
+}
+
+.metaRow { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-3); }
+.meta  { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--color-text-3); }
+.actionButton { flex-shrink: 0; }
+.rtlIcon { transform: rotate(180deg); }
+
+/* Episode chips */
+.episodeChips {
+  display: flex; gap: var(--space-2); flex-wrap: wrap;
+}
+.episodeChip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.75rem; color: var(--color-text-2);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.episodeChip:hover { border-color: var(--color-accent); color: var(--color-text); }
+.epNum {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--color-accent-glow); color: var(--color-accent-2);
+  font-size: 0.625rem; font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 760px) {
+  .card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .moduleNumWrap {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .connector {
+    display: none;
+  }
+}
