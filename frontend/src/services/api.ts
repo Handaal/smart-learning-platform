@@ -2,9 +2,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const BASE = import.meta.env.VITE_API_BASE_URL
   ? String(import.meta.env.VITE_API_BASE_URL)
-  : import.meta.env.DEV
-    ? 'http://127.0.0.1:3002'
-    : '';
+  : '';
 
 class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) {
@@ -74,6 +72,7 @@ const post = <T>(path: string, body: unknown) =>
   request<T>(path, { method: 'POST', body: JSON.stringify(body) });
 const patch = <T>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) });
+const del = <T>(path: string) => request<T>(path, { method: 'DELETE' });
 
 // ── Auth ─────────────────────────────────────────────────────
 export const authApi = {
@@ -81,7 +80,17 @@ export const authApi = {
     post<{ data: { accessToken: string; refreshToken: string; learnerId: string } }>(
       '/auth/login', { participantId, password }),
   register: (body: object) => post('/auth/register', body),
-  me:       () => get<{ data: { id: string; participantId: string; cohort: string; role: 'learner' | 'research_admin' } }>('/auth/me'),
+  me:       () => get<{ data: {
+    id: string;
+    participantId: string;
+    cohort: 'experimental' | 'control';
+    role: 'learner' | 'research_admin';
+    isActive: boolean;
+    groupLabel: string;
+    groupEmotionTrackingEnabled: boolean;
+    emotionTrackingOverride: boolean | null;
+    emotionTrackingEnabled: boolean;
+  } }>('/auth/me'),
   logout:   () => post('/auth/logout', {}),
 };
 
@@ -93,6 +102,12 @@ export const learnerApi = {
   recordConsent: (id: string, body: object) => post(`/learners/${id}/consent`, body),
   withdrawConsent: (id: string)   => post(`/learners/${id}/withdraw`, {}),
   getProgress: (id: string)       => get<{ data: unknown }>(`/learners/${id}/progress`),
+  getAdminOverview: () => get<{ data: unknown }>('/learners/admin/overview'),
+  updateGroupEmotionTracking: (cohort: 'experimental' | 'control', emotionTrackingEnabled: boolean) =>
+    patch<{ data: unknown }>(`/learners/admin/groups/${cohort}`, { emotionTrackingEnabled }),
+  updateLearnerAccess: (id: string, body: { isActive?: boolean; emotionTrackingOverride?: boolean | null }) =>
+    patch<{ data: unknown }>(`/learners/admin/learners/${id}`, body),
+  deleteLearner: (id: string) => del<{ data: unknown }>(`/learners/admin/learners/${id}`),
 };
 
 // ── Sessions ─────────────────────────────────────────────────

@@ -6,6 +6,11 @@ export const en: TranslationDictionary = {
     ar: 'العربية',
     en: 'English',
   },
+  theme: {
+    label: 'Interface theme',
+    toDark: 'Switch to dark mode',
+    toLight: 'Switch to light mode',
+  },
   app: {
     brand: {
       platformName: 'Smart Training Platform',
@@ -17,6 +22,8 @@ export const en: TranslationDictionary = {
   },
   common: {
     loading: 'Loading...',
+    loadingLearnerJourney: 'Loading learner journey...',
+    preparingAssessment: 'Preparing assessment flow...',
     save: 'Save',
     cancel: 'Cancel',
     close: 'Close',
@@ -41,7 +48,7 @@ export const en: TranslationDictionary = {
     },
     role: {
       learner: 'Learner',
-      researchAdmin: 'Research Admin',
+      researchAdmin: 'Admin',
     },
     errors: {
       generic: 'Something went wrong. Please try again.',
@@ -52,10 +59,13 @@ export const en: TranslationDictionary = {
   layout: {
     header: {
       toggleNavigation: 'Toggle navigation',
-      researchWorkspace: 'Research Admin Workspace',
+      researchWorkspace: 'Platform Management',
       learnerWorkspace: 'Adaptive Learning Environment',
       researchBadge: 'Research-ready dashboard',
       controlGroupBadge: 'Standard control-group flow',
+      pendingApprovalBadge: 'Awaiting admin approval',
+      experimentalSupportBadge: 'Emotion-enabled learning support',
+      controlFlowBadge: 'Standard learning flow',
     },
     sidebar: {
       closeNavigation: 'Close navigation',
@@ -66,15 +76,16 @@ export const en: TranslationDictionary = {
         pmTools: 'PM Tools',
         assessment: 'Assessment',
         help: 'Help Guide',
-        researchAdmin: 'Research Admin',
-        courseBuilder: 'Course Builder',
+        researchAdmin: 'Platform Management',
+        accessManagement: 'User & Group Management',
+        courseBuilder: 'Courses & Lessons',
         reports: 'Emotion Reports',
         emotionValidation: 'Emotion Validation Lab',
         adaptiveDisplayCriteria: 'Adaptive Display Criteria',
       },
       workspaceLabel: {
         learner: 'Learner Workspace',
-        researchAdmin: 'Research Admin Workspace',
+        researchAdmin: 'Platform Management',
       },
       workspaceText: {
         learner: 'Follow a clear learning pathway with adaptive support and visible progress.',
@@ -97,9 +108,9 @@ export const en: TranslationDictionary = {
       learnerHelpSubtitle: 'A clear guide to move through lessons, complete activities, and use adaptive support prompts effectively.',
       pmToolsTitle: 'Project Tools',
       pmToolsSubtitle: 'Access structured project-management tools that support the learning activities and scenarios.',
-      researchHomeTitle: 'Research Admin Workspace',
+      researchHomeTitle: 'Platform Management',
       researchHomeSubtitle: 'Unified control layer for smart training authoring, monitoring, analytics, and research exports.',
-      courseBuilderTitle: 'Course Builder',
+      courseBuilderTitle: 'Courses & Lessons',
       courseBuilderSubtitle: 'Organize units, lessons, lesson elements, and adaptive mappings in one structured authoring workspace.',
       reportsTitle: 'Research Reports',
       reportsSubtitle: 'Review learner progress, emotion sensing summaries, intervention outcomes, and export-ready analytics.',
@@ -107,6 +118,8 @@ export const en: TranslationDictionary = {
       emotionValidationSubtitle: 'Live webcam-based testing to validate emotion sensing plausibility, confidence quality, and detection stability during demonstrations.',
       adaptiveDisplayCriteriaTitle: 'Adaptive Display Acceptance Criteria',
       adaptiveDisplayCriteriaSubtitle: 'Reference standard for what learners should see, what must stay hidden, and how adaptive notices and assessment feedback should behave.',
+      userManagementTitle: 'User & Group Management',
+      userManagementSubtitle: 'Approve learners, manage account access, and control emotion tracking for the two study groups.',
       researchHelpTitle: 'Research Admin Help',
       researchHelpSubtitle: 'Operational guidance for course management, adaptive mapping, analytics interpretation, and research exports.',
       participantTitle: 'Participant Analytics',
@@ -131,7 +144,7 @@ export const en: TranslationDictionary = {
         label: 'Research Admin Demo',
         description: 'Opens the unified research-admin workspace with course builder and reports.',
       },
-      participantId: 'Participant ID',
+      participantId: 'Name',
       participantPlaceholder: 'e.g. STEP-2026-001',
       password: 'Password',
       submit: 'Sign in',
@@ -285,6 +298,10 @@ export const en: TranslationDictionary = {
         continue: 'Continue from the last lesson step you reached.',
         start: 'This unit is ready when you are.',
       },
+      empty: {
+        title: 'No units available yet',
+        hint: 'Your learning units will appear here once they are published.',
+      },
       lessonTypes: {
         guided: 'Guided Lesson',
         scenario: 'Scenario Task',
@@ -302,6 +319,23 @@ export const en: TranslationDictionary = {
       },
     },
     session: {
+      emotionPanel: {
+        title: 'Live emotion sensor & monitor',
+        cameraOffTitle: 'Learner camera is off',
+        cameraOffHint: 'Press "Run camera" to start automatic emotion detection.',
+        start: 'Run camera',
+        stop: 'Stop camera',
+        analysisTitle: 'Automatic facial-expression assessment',
+        lastAnalysis: 'Latest automatic camera analysis:',
+        accuracy: 'Accuracy:',
+        updateNote: 'Expressions are tracked continuously to align learning paths.',
+        confidence: 'Affective confidence (Confidence):',
+        attention: 'Engagement quality (Attention):',
+        faceDetected: 'Face detected',
+        noFace: 'No face',
+        starting: 'Starting camera...',
+        waiting: 'Waiting for a reading...',
+      },
       emotionLabel: {
         focused: 'High engagement',
         clarification: 'Needs clarification',
@@ -641,7 +675,7 @@ export const en: TranslationDictionary = {
     },
     completion: {
       title: 'Training completed successfully',
-      subtitle: 'You completed the required training sequence: consent, profile/setup, ready screen, pre-test, training units, and post-test.',
+      subtitle: 'You completed the full training sequence. Here is a quick recap of the stages you finished.',
       sequence: {
         consent: 'Login and consent',
         setup: 'Profile and setup',
@@ -1675,10 +1709,20 @@ export const en: TranslationDictionary = {
   research: {
     home: {
       eyebrow: 'Unified Privileged Workspace',
-      title: 'Research Admin',
+      title: 'Platform Management',
       lead: 'One control hub for smart training authoring, adaptive rule oversight, learner analytics, emotion sensing reports, exports, and research-ready preview workflows.',
       badge: 'Research-aware control layer',
       openWorkspace: 'Open workspace',
+      userManagementCardTitle: 'User & group management',
+      userManagementCardDescription: 'Approve learner accounts, control emotion-tracker access for the two groups, and apply individual overrides when needed.',
+      openManagementPanel: 'Open management panel',
+      reportCatalogEyebrow: 'Research report catalog',
+      reportCatalogTitle: 'Core reports inside the researcher account',
+      reportCatalogLead: 'These cards mirror the core reports used in academic presentations and link directly to the matching section in the reports dashboard.',
+      openReportsPage: 'Open reports page',
+      reportWhatItShows: 'What it shows',
+      reportHowToRead: 'How to read it',
+      openThisReport: 'Open this report',
       summaryTitle: 'Implementation Slice Completed',
       summaryItems: [
         'Researcher and admin access have been unified under one operational workspace.',

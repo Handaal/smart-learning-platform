@@ -1,12 +1,15 @@
 .root {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top right, rgba(18, 148, 139, 0.09), transparent 24%),
-    linear-gradient(180deg, rgba(255, 250, 244, 0.72), rgba(244, 239, 228, 0.96)),
+    radial-gradient(circle at top right, rgba(18, 148, 139, 0.1), transparent 24%),
+    radial-gradient(circle at 30% 0%, rgba(91, 108, 198, 0.07), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(217, 106, 74, 0.06), transparent 26%),
+    linear-gradient(180deg, var(--color-surface), var(--color-bg)),
     var(--color-bg);
 }
 
 .main {
+  min-width: 0;
   min-height: 100vh;
   margin-inline-start: var(--sidebar-width);
   display: flex;
@@ -15,9 +18,14 @@
 
 .content {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   width: min(100%, 1680px);
   margin-inline: auto;
-  padding: clamp(16px, 2vw, 28px);
+  padding: clamp(14px, 1.8vw, 24px);
+  /* Safety net: a single wide child (table, chart) can never push the whole
+     page sideways. Internal `.table-scroll` regions keep their own scrollbars. */
+  overflow-x: clip;
 }
 
 .backdrop {

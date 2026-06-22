@@ -1,12 +1,20 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Brain, CheckCircle2, Lightbulb, PenLine, Target } from 'lucide-react';
+import { BookOpen, Brain, Check, CheckCircle2, Lightbulb, PenLine, Target } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
 import { reflectionApi, sessionApi } from '@/services/api';
 import { USE_MOCK } from '@/services/mockData';
+import StatusBadge, { type BadgeStatus } from '@/components/ui/StatusBadge';
 import styles from './ReflectionPage.module.css';
+
+function depthBadgeStatus(depth: string | undefined): BadgeStatus {
+  if (depth === 'critical') return 'complete';
+  if (depth === 'analytical') return 'warning';
+  if (depth === 'descriptive') return 'neutral';
+  return 'neutral';
+}
 
 type ModulePrompt = {
   id: string;
@@ -155,17 +163,10 @@ export default function ReflectionPage() {
               <span className={styles.scoreNum}>{feedback.reflectionScore ?? '-'}</span>
               <span className={styles.scoreLabel}>{t('learner.reflection.score', '/ 100')}</span>
             </div>
-            <span
-              className={`badge ${
-                feedback.reflectionDepth === 'critical'
-                  ? 'badge-success'
-                  : feedback.reflectionDepth === 'analytical'
-                    ? 'badge-amber'
-                    : 'badge-muted'
-              }`}
-            >
-              {formatDepthLabel(feedback.reflectionDepth, t)}
-            </span>
+            <StatusBadge
+              status={depthBadgeStatus(feedback.reflectionDepth)}
+              label={formatDepthLabel(feedback.reflectionDepth, t)}
+            />
           </div>
 
           {feedback.autoFeedback?.points?.length ? (
@@ -176,7 +177,8 @@ export default function ReflectionPage() {
               </h4>
               {feedback.autoFeedback.points.map((point, index) => (
                 <div key={`${point}-${index}`} className={styles.feedPoint}>
-                  <span className={styles.arrow}>-</span> {point}
+                  <span className={styles.feedIcon}><Check size={13} /></span>
+                  <span>{point}</span>
                 </div>
               ))}
             </div>

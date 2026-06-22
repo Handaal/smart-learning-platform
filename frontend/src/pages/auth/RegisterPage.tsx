@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { authApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './LoginPage.module.css';
@@ -98,9 +99,14 @@ export default function RegisterPage() {
         )}
 
         {createdId && (
-          <p className={styles.sub} role="status">
-            {t('auth.register.generatedIdPrefix')} <strong>{createdId}</strong>. {t('auth.register.generatedIdSuffix')}
-          </p>
+          <div className={styles.successCard} role="status">
+            <span className={styles.successTitle}>
+              <CheckCircle2 size={16} />
+              {t('auth.register.generatedIdPrefix')}
+            </span>
+            <span className={styles.successId}>{createdId}</span>
+            <p className={styles.successHint}>{t('auth.register.generatedIdSuffix')}</p>
+          </div>
         )}
 
         <button type="submit" className="btn btn-primary" disabled={busy} style={{ width: '100%' }}>

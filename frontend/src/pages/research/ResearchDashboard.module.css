@@ -1,12 +1,15 @@
 .page {
   display: grid;
+  /* Single-column grids default to an `auto` column that grows to max-content
+     and ignores the container width (grid blowout). Pin to minmax(0,1fr). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   animation: fadeUp 0.3s ease both;
 }
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(340px, 0.9fr);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
   gap: 20px;
 }
 
@@ -26,13 +29,13 @@
 }
 
 .heroMain {
-  padding: clamp(22px, 3vw, 32px);
+  padding: clamp(18px, 2.2vw, 24px);
   display: grid;
-  gap: 18px;
+  gap: 16px;
   background:
     radial-gradient(circle at top right, rgba(18, 148, 139, 0.12), transparent 36%),
     radial-gradient(circle at bottom left, rgba(31, 111, 176, 0.12), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 244, 0.98));
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .eyebrow,
@@ -83,7 +86,7 @@
   gap: 8px;
   padding: 9px 12px;
   border-radius: 999px;
-  background: rgba(36, 49, 63, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--color-text-2);
   font-size: 0.84rem;
   font-weight: 600;
@@ -92,6 +95,42 @@
 .sectionLink:hover {
   color: var(--color-accent);
   background: rgba(18, 148, 139, 0.1);
+}
+
+/* Sticky section nav — stays reachable across the 12 report sections */
+.stickyNav {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 20;
+  margin-bottom: 4px;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--color-border-soft);
+  border-bottom: 2px solid var(--color-violet-soft);
+}
+
+.stickyNavInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 2px;
+  scrollbar-width: thin;
+}
+
+.stickyNavInner::-webkit-scrollbar {
+  height: 6px;
+}
+
+.stickyNavInner .sectionLink {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sectionLinkActive,
+.sectionLinkActive:hover {
+  background: var(--color-violet-soft);
+  color: var(--color-violet);
 }
 
 .utilityColumn {
@@ -120,8 +159,8 @@
 
 .filterGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px 18px;
 }
 
 .filterField {
@@ -168,6 +207,7 @@
 
 .catalogSection {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 
@@ -176,17 +216,60 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
   align-items: start;
+  min-width: 0;
 }
 
 .catalogCard {
+  position: relative;
+  overflow: hidden;
   border-radius: 22px;
-  border: 1px solid var(--color-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 249, 242, 0.97));
+  --card-accent: var(--color-accent);
+  --card-accent-soft: var(--color-accent-glow);
+  border: 1px solid color-mix(in srgb, var(--card-accent) 20%, var(--color-border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card-accent) 6%, transparent), transparent 44%),
+    var(--color-surface);
   box-shadow: var(--shadow-sm);
   padding: 16px;
   display: grid;
   gap: 12px;
   align-content: start;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.catalogCard::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--card-accent), color-mix(in srgb, var(--card-accent) 40%, transparent));
+}
+
+.catalogCard:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--card-accent) 42%, var(--color-border));
+}
+
+.catalogCard[data-accent='teal'] {
+  --card-accent: var(--color-accent);
+  --card-accent-soft: var(--color-accent-glow);
+}
+
+.catalogCard[data-accent='indigo'] {
+  --card-accent: var(--color-indigo);
+  --card-accent-soft: var(--color-indigo-soft);
+}
+
+.catalogCard[data-accent='coral'] {
+  --card-accent: var(--color-coral);
+  --card-accent-soft: var(--color-coral-soft);
+}
+
+.catalogCard[data-accent='amber'] {
+  --card-accent: var(--color-amber);
+  --card-accent-soft: var(--color-amber-soft);
 }
 
 .catalogHead {
@@ -201,8 +284,8 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: rgba(18, 148, 139, 0.1);
-  color: var(--color-accent);
+  background: var(--card-accent-soft);
+  color: var(--card-accent);
   flex: none;
 }
 
@@ -243,11 +326,11 @@
 }
 
 .catalogPreview {
-  border: 1px dashed rgba(18, 148, 139, 0.28);
+  border: 1px dashed color-mix(in srgb, var(--card-accent) 32%, transparent);
   border-radius: 14px;
   min-height: 90px;
   padding: 10px;
-  background: linear-gradient(180deg, rgba(18, 148, 139, 0.07), rgba(31, 111, 176, 0.03));
+  background: color-mix(in srgb, var(--card-accent) 7%, var(--color-surface-2));
 }
 
 .catalogBars {
@@ -260,7 +343,7 @@
 .catalogBars span {
   flex: 1;
   border-radius: 9px 9px 4px 4px;
-  background: linear-gradient(180deg, rgba(18, 148, 139, 0.84), rgba(31, 111, 176, 0.72));
+  background: linear-gradient(180deg, var(--card-accent), color-mix(in srgb, var(--card-accent) 55%, transparent));
 }
 
 .catalogSvg {
@@ -270,7 +353,7 @@
 
 .catalogLine {
   fill: none;
-  stroke: rgba(18, 148, 139, 0.96);
+  stroke: var(--card-accent);
   stroke-width: 6;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -278,7 +361,7 @@
 
 .catalogLineSoft {
   fill: none;
-  stroke: rgba(31, 111, 176, 0.68);
+  stroke: color-mix(in srgb, var(--card-accent) 52%, transparent);
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -293,7 +376,7 @@
 .catalogMatrix span {
   min-height: 18px;
   border-radius: 6px;
-  background: rgba(18, 148, 139, 0.84);
+  background: var(--card-accent);
 }
 
 .catalogTable {
@@ -311,7 +394,7 @@
 .catalogTable span {
   min-height: 12px;
   border-radius: 999px;
-  background: rgba(36, 49, 63, 0.14);
+  background: rgba(var(--overlay-rgb), 0.14);
   justify-self: start;
 }
 
@@ -335,7 +418,7 @@
   top: 50%;
   height: 3px;
   border-radius: 999px;
-  background: rgba(18, 148, 139, 0.24);
+  background: color-mix(in srgb, var(--card-accent) 26%, transparent);
   transform: translateY(-50%);
 }
 
@@ -344,16 +427,16 @@
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(18, 148, 139, 0.92), rgba(31, 111, 176, 0.82));
-  box-shadow: 0 0 0 6px rgba(18, 148, 139, 0.08);
+  background: var(--card-accent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--card-accent) 12%, transparent);
 }
 
 .catalogDot {
-  fill: rgba(18, 148, 139, 0.96);
+  fill: var(--card-accent);
 }
 
 .catalogDotSoft {
-  fill: rgba(31, 111, 176, 0.72);
+  fill: color-mix(in srgb, var(--card-accent) 55%, transparent);
 }
 
 .catalogCopy {
@@ -386,7 +469,7 @@
   align-items: center;
   padding: 7px 10px;
   border-radius: 999px;
-  background: rgba(36, 49, 63, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--color-text-2);
   font-size: 0.78rem;
   font-weight: 700;
@@ -396,15 +479,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-accent-blue);
+  color: var(--card-accent, var(--color-accent-blue));
   font-weight: 700;
   font-size: 0.84rem;
 }
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
+  min-width: 0;
 }
 
 .kpiCard {
@@ -437,12 +521,15 @@
 
 .dashboardSections {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
 }
 
 .sectionBlock {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
+  scroll-margin-top: calc(var(--header-height) + 64px);
 }
 
 .sectionIntro {
@@ -450,13 +537,15 @@
   align-items: end;
   justify-content: space-between;
   gap: 16px;
+  min-width: 0;
 }
 
 .dualGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
   align-items: start;
+  min-width: 0;
 }
 
 .summaryMetrics {
@@ -468,7 +557,7 @@
   min-width: 0;
   padding: 14px;
   border-radius: 18px;
-  background: rgba(36, 49, 63, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   display: grid;
   gap: 6px;
 }
@@ -505,7 +594,7 @@
   gap: 10px;
   padding: 12px;
   border-radius: 14px;
-  background: rgba(36, 49, 63, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .validationBadge {
@@ -568,7 +657,7 @@
   height: 14px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(36, 49, 63, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
 }
 
 .emotionFill,
@@ -594,7 +683,7 @@
   padding: 16px;
   display: grid;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--color-surface);
 }
 
 .barChart {
@@ -683,26 +772,26 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .table th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: rgba(252, 249, 242, 0.98);
+  background: var(--color-surface);
   text-align: start;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.78rem;
-  letter-spacing: 0.03em;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--color-text-3);
   white-space: nowrap;
 }
 
 .table td {
-  padding: 14px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--color-border-soft);
   vertical-align: middle;
   overflow-wrap: anywhere;
@@ -713,7 +802,7 @@
 }
 
 .table tbody tr:nth-child(odd) {
-  background: rgba(36, 49, 63, 0.025);
+  background: rgba(var(--overlay-rgb), 0.025);
 }
 
 .clickRow {
@@ -733,7 +822,7 @@
   cursor: pointer;
   transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 249, 242, 0.98));
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .participantCard:hover {
@@ -758,16 +847,10 @@
   display: inline-flex;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(36, 49, 63, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--color-text-2);
   font-size: 0.78rem;
   font-weight: 600;
-}
-
-@media (max-width: 1280px) {
-  .kpiGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 1120px) {
@@ -796,11 +879,6 @@
 }
 
 @media (max-width: 900px) {
-  .filterGrid,
-  .kpiGrid {
-    grid-template-columns: 1fr 1fr;
-  }
-
   .emotionRow {
     grid-template-columns: 1fr;
   }
@@ -810,11 +888,6 @@
   .page,
   .dashboardSections {
     gap: 18px;
-  }
-
-  .filterGrid,
-  .kpiGrid {
-    grid-template-columns: 1fr;
   }
 
   .heroMain,

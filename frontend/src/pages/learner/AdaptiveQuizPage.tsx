@@ -309,9 +309,6 @@ export default function AdaptiveQuizPage() {
                 ? t('learner.adaptiveQuiz.hideHint', 'Hide hint')
                 : t('learner.adaptiveQuiz.showHint', 'Show a quick hint')}
             </button>
-            <span className={styles.helperText}>
-              {t('learner.adaptiveQuiz.helper', 'Submit your answer first, or open a short hint if you need it.')}
-            </span>
           </div>
         ) : null}
 

@@ -1,10 +1,10 @@
 .surface {
   border: 1px solid rgba(27, 89, 124, 0.14);
-  background: linear-gradient(180deg, rgba(255, 252, 245, 0.98), rgba(248, 244, 236, 0.95));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
   border-radius: 24px;
   padding: 1.1rem 1.2rem;
   box-shadow: 0 18px 40px rgba(54, 46, 31, 0.08);
-  color: #243649;
+  color: var(--color-text);
 }
 
 .header {
@@ -19,7 +19,7 @@
   align-items: center;
   gap: 0.4rem;
   font-size: 0.78rem;
-  color: #0f7a78;
+  color: var(--color-accent);
   font-weight: 700;
   margin-bottom: 0.35rem;
 }
@@ -33,7 +33,7 @@
 .message {
   margin: 0.55rem 0 0;
   line-height: 1.8;
-  color: #51616e;
+  color: var(--color-text-2);
 }
 
 .meta {
@@ -45,13 +45,13 @@
 .metaBlock strong {
   display: block;
   font-size: 0.84rem;
-  color: #1a4661;
+  color: var(--color-accent-blue);
   margin-bottom: 0.2rem;
 }
 
 .metaBlock p {
   margin: 0;
-  color: #5b6e7d;
+  color: var(--color-text-2);
   line-height: 1.7;
 }
 
@@ -71,8 +71,8 @@
 
 .choiceButton {
   border: 1px solid rgba(27, 89, 124, 0.18);
-  background: rgba(255, 255, 255, 0.92);
-  color: #183247;
+  background: var(--color-surface);
+  color: var(--color-accent-blue);
   border-radius: 999px;
   padding: 0.65rem 0.95rem;
   font-weight: 700;
@@ -82,7 +82,7 @@
 .dismiss {
   border: 0;
   background: transparent;
-  color: #7f8c98;
+  color: var(--color-text-2);
   cursor: pointer;
   padding: 0.25rem;
 }
@@ -96,11 +96,11 @@
 .summary {
   cursor: pointer;
   font-weight: 700;
-  color: #1f5f89;
+  color: var(--color-accent-blue);
 }
 
 .sidePanel {
-  border-inline-start: 6px solid #1c8b84;
+  border-inline-start: 6px solid var(--color-accent);
 }
 
 .miniTaskStrip {
@@ -117,22 +117,22 @@
 }
 
 .advancedPath {
-  background: linear-gradient(135deg, rgba(12, 104, 111, 0.12), rgba(255, 247, 230, 0.94));
+  background: linear-gradient(135deg, rgba(12, 104, 111, 0.12), var(--color-surface));
 }
 
 .informationWindow {
   border-color: rgba(55, 118, 182, 0.18);
-  background: linear-gradient(180deg, rgba(245, 250, 255, 0.98), rgba(238, 246, 255, 0.95));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .standardPath {
   box-shadow: none;
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--color-surface);
 }
 
 .operationalSafetyProtocol {
   border-color: rgba(121, 102, 34, 0.24);
-  background: linear-gradient(180deg, rgba(255, 251, 241, 0.98), rgba(250, 245, 232, 0.98));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 @media (max-width: 760px) {

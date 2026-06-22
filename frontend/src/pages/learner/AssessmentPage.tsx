@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle2, CircleHelp, ClipboardList, Gauge, ListChecks, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CircleHelp, ClipboardList, Gauge, ListChecks, XCircle } from 'lucide-react';
 import { ApiError, assessmentApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './AssessmentPage.module.css';
@@ -63,18 +63,64 @@ type AssessmentSubmitPayload = {
   };
 };
 
-function getCopy(language: 'ar' | 'en', formType: FormType) {
+type AssessmentCopy = {
+  title: string;
+  description: string;
+  stageLabel: string;
+  introSummary: string;
+  questionTypes: string;
+  expectedTime: string;
+  expectedTimeValue: string;
+  start: string;
+  starting: string;
+  chooseOne: string;
+  question: string;
+  progress: string;
+  answered: string;
+  previous: string;
+  next: string;
+  finish: string;
+  submitting: string;
+  hintTitle: string;
+  resultTitle: string;
+  resultLead: string;
+  scoreLabel: string;
+  correctCount: string;
+  reviewTitle: string;
+  yourAnswer: string;
+  correctAnswer: string;
+  explanation: string;
+  noExplanation: string;
+  continueAction: string;
+  blocked: string;
+  finalBlocked: string;
+  questionCount: string;
+  passingScore: string;
+  trueFalse: string;
+  multipleChoice: string;
+  passed: string;
+  notPassed: string;
+  answerSelected: string;
+  loadFailed: string;
+  saveFailed: string;
+  genericError: string;
+  statusLabel: string;
+  correctLabel: string;
+  incorrectLabel: string;
+};
+
+function getLocalizedAssessmentCopy(language: 'ar' | 'en', formType: FormType): AssessmentCopy {
   if (language === 'ar') {
     return {
       title: formType === 'pre' ? 'الاختبار القبلي' : 'الاختبار البعدي',
       description:
         formType === 'pre'
-          ? 'أجب عن مجموعة قصيرة من الأسئلة لقياس مستوى البداية قبل الدخول إلى الوحدات التدريبية.'
-          : 'أجب عن مجموعة قصيرة من الأسئلة لقياس مستوى التقدم بعد إكمال البرنامج التدريبي.',
+          ? 'أجب عن مجموعة قصيرة من الأسئلة لقياس مستواك قبل الدخول إلى الوحدات التدريبية.'
+          : 'أجب عن مجموعة قصيرة من الأسئلة لقياس مستوى تقدمك بعد إكمال البرنامج التدريبي.',
       stageLabel: formType === 'pre' ? 'قبل الوحدات التدريبية' : 'بعد آخر وحدة',
       introSummary:
-        'يتكون هذا التقييم من أسئلة متعددة الاختيارات وصح/خطأ فقط. يظهر سؤال واحد في كل مرة حتى تحافظ على التركيز وتراجع إجاباتك بسهولة.',
-      questionTypes: 'أنواع الأسئلة: اختيار من متعدد وصح/خطأ',
+        'يتكون هذا التقييم من أسئلة اختيار من متعدد وصح/خطأ فقط. يظهر سؤال واحد في كل مرة حتى تحافظ على التركيز وتراجع إجاباتك بسهولة.',
+      questionTypes: 'أنواع الأسئلة: اختيار من متعدد وصح / خطأ',
       expectedTime: 'الوقت المتوقع',
       expectedTimeValue: '5-8 دقائق',
       start: 'ابدأ التقييم',
@@ -110,6 +156,12 @@ function getCopy(language: 'ar' | 'en', formType: FormType) {
       passed: 'أداء جيد',
       notPassed: 'يمكنك مراجعة الإجابات أدناه ثم المتابعة.',
       answerSelected: 'تم اختيار الإجابة',
+      loadFailed: 'تعذر تحميل التقييم.',
+      saveFailed: 'تعذر حفظ التقييم.',
+      genericError: 'حدث خطأ غير متوقع.',
+      statusLabel: 'الحالة',
+      correctLabel: 'إجابة صحيحة',
+      incorrectLabel: 'إجابة غير صحيحة',
     };
   }
 
@@ -158,6 +210,12 @@ function getCopy(language: 'ar' | 'en', formType: FormType) {
     passed: 'Strong result',
     notPassed: 'Review your answers below, then continue.',
     answerSelected: 'Answer selected',
+    loadFailed: 'Unable to load the assessment.',
+    saveFailed: 'Unable to save the assessment.',
+    genericError: 'Something went wrong.',
+    statusLabel: 'Status',
+    correctLabel: 'Correct',
+    incorrectLabel: 'Incorrect',
   };
 }
 
@@ -175,7 +233,7 @@ export default function AssessmentPage() {
   const { language } = useI18n();
 
   const formType: FormType = form === 'post' ? 'post' : 'pre';
-  const copy = useMemo(() => getCopy(language, formType), [formType, language]);
+  const copy = useMemo(() => getLocalizedAssessmentCopy(language, formType), [formType, language]);
 
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [quiz, setQuiz] = useState<AssessmentQuiz | null>(null);
@@ -184,6 +242,7 @@ export default function AssessmentPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submittedResult, setSubmittedResult] = useState<AssessmentSubmitPayload | null>(null);
+  const [notice, setNotice] = useState('');
 
   const questions = quiz?.questions ?? [];
   const currentQuestion = questions[currentIndex] ?? null;
@@ -197,7 +256,7 @@ export default function AssessmentPage() {
       const response = await assessmentApi.start(formType);
       const payload = (response as { data?: AssessmentStartPayload }).data;
       if (!payload?.id || !payload.quiz) {
-        throw new Error(language === 'ar' ? 'تعذر تحميل التقييم.' : 'Unable to load the assessment.');
+        throw new Error(copy.loadFailed);
       }
 
       setAssessmentId(payload.id);
@@ -215,7 +274,7 @@ export default function AssessmentPage() {
         return;
       }
 
-      alert(error instanceof Error ? error.message : language === 'ar' ? 'حدث خطأ غير متوقع.' : 'Something went wrong.');
+      setNotice(error instanceof Error ? error.message : copy.genericError);
     } finally {
       setBusy(false);
     }
@@ -232,6 +291,7 @@ export default function AssessmentPage() {
   }, [busy, formType, location.search, started]);
 
   function selectAnswer(questionId: string, choiceId: string) {
+    setNotice('');
     setAnswers((current) => ({
       ...current,
       [questionId]: choiceId,
@@ -240,10 +300,11 @@ export default function AssessmentPage() {
 
   function goNext() {
     if (!currentQuestion || !answers[currentQuestion.id]) {
-      alert(copy.blocked);
+      setNotice(copy.blocked);
       return;
     }
 
+    setNotice('');
     setCurrentIndex((index) => Math.min(index + 1, questions.length - 1));
   }
 
@@ -254,9 +315,10 @@ export default function AssessmentPage() {
   async function submitAssessment() {
     if (!assessmentId) return;
     if (!canSubmit) {
-      alert(copy.finalBlocked);
+      setNotice(copy.finalBlocked);
       return;
     }
+    setNotice('');
 
     setBusy(true);
     try {
@@ -268,7 +330,7 @@ export default function AssessmentPage() {
       });
       const payload = (response as { data?: AssessmentSubmitPayload }).data;
       if (!payload) {
-        throw new Error(language === 'ar' ? 'تعذر حفظ التقييم.' : 'Unable to save the assessment.');
+        throw new Error(copy.saveFailed);
       }
 
       setSubmittedResult(payload);
@@ -278,7 +340,7 @@ export default function AssessmentPage() {
         return;
       }
 
-      alert(error instanceof Error ? error.message : language === 'ar' ? 'حدث خطأ غير متوقع.' : 'Something went wrong.');
+      setNotice(error instanceof Error ? error.message : copy.genericError);
     } finally {
       setBusy(false);
     }
@@ -315,7 +377,7 @@ export default function AssessmentPage() {
               <strong>{correctCount} / {questionCount}</strong>
             </article>
             <article className={styles.statCard}>
-              <span>{language === 'ar' ? 'الحالة' : 'Status'}</span>
+              <span>{copy.statusLabel}</span>
               <strong>{submittedResult.attempt.passed ? copy.passed : copy.notPassed}</strong>
             </article>
           </div>
@@ -340,12 +402,12 @@ export default function AssessmentPage() {
                         {answer.isCorrect ? (
                           <>
                             <CheckCircle2 size={14} />
-                            {language === 'ar' ? 'إجابة صحيحة' : 'Correct'}
+                            {copy.correctLabel}
                           </>
                         ) : (
                           <>
                             <XCircle size={14} />
-                            {language === 'ar' ? 'إجابة غير صحيحة' : 'Incorrect'}
+                            {copy.incorrectLabel}
                           </>
                         )}
                       </span>
@@ -356,11 +418,11 @@ export default function AssessmentPage() {
                     <div className={styles.answerSummary}>
                       <div>
                         <span>{copy.yourAnswer}</span>
-                        <strong>{answer.selectedChoice?.choiceText ?? '—'}</strong>
+                        <strong>{answer.selectedChoice?.choiceText ?? 'â€”'}</strong>
                       </div>
                       <div>
                         <span>{copy.correctAnswer}</span>
-                        <strong>{correctChoice?.choiceText ?? '—'}</strong>
+                        <strong>{correctChoice?.choiceText ?? 'â€”'}</strong>
                       </div>
                     </div>
 
@@ -407,6 +469,13 @@ export default function AssessmentPage() {
               <span>{copy.questionTypes}</span>
             </div>
           </div>
+
+          {notice ? (
+            <div className={styles.notice} role="alert">
+              <AlertCircle size={15} />
+              <span>{notice}</span>
+            </div>
+          ) : null}
 
           <button className="btn btn-primary btn-lg" onClick={() => void startAssessment()} disabled={busy}>
             {busy ? copy.starting : copy.start}
@@ -458,7 +527,6 @@ export default function AssessmentPage() {
             </div>
 
             <h2>{currentQuestion.questionText}</h2>
-            <p className={styles.choiceHint}>{copy.chooseOne}</p>
 
             <div className={styles.choiceList}>
               {currentQuestion.choices.map((choice, index) => {
@@ -490,6 +558,13 @@ export default function AssessmentPage() {
           </article>
         ) : null}
 
+        {notice ? (
+          <div className={styles.notice} role="alert">
+            <AlertCircle size={15} />
+            <span>{notice}</span>
+          </div>
+        ) : null}
+
         <div className={styles.actions}>
           <button className="btn btn-secondary" type="button" onClick={goPrevious} disabled={currentIndex === 0 || busy}>
             {copy.previous}
@@ -509,3 +584,4 @@ export default function AssessmentPage() {
     </div>
   );
 }
+

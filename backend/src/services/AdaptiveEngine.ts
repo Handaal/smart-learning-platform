@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { redis } from '../lib/redis';
 import { logger } from '../lib/logger';
 import { researchLedger } from './ResearchLedger';
+import { resolveLearnerAccessSnapshot } from './learnerAccess';
 import {
   ADAPTIVE_ALERTS_POLICY_VERSION,
   ADAPTIVE_ALERTS_THRESHOLDS,
@@ -232,6 +233,18 @@ const SCENARIOS: Record<ScenarioMatch, ScenarioDescriptor> = {
 export class AdaptiveEngine {
   async decide(ctx: AdaptiveContext): Promise<AdaptiveDecision> {
     const learnerCohort = ctx.cohort ?? (await this.resolveLearnerCohort(ctx.learnerId));
+    const resolvedEmotionTrackingAccess =
+      typeof ctx.emotionTrackingEnabled === 'boolean'
+        ? ctx.emotionTrackingEnabled
+        : await this.resolveEmotionTrackingEnabled(ctx.learnerId);
+    const emotionTrackingEnabled =
+      typeof resolvedEmotionTrackingAccess === 'boolean'
+        ? resolvedEmotionTrackingAccess
+        : learnerCohort === 'control'
+          ? false
+          : learnerCohort === 'experimental'
+            ? true
+            : false;
     const realtimeState =
       ctx.realtimeState ?? (await this.fetchRealtimeState(ctx.sessionId, ctx.participantId));
 
@@ -242,14 +255,19 @@ export class AdaptiveEngine {
     const feedbackLoop = this.buildFeedbackLoop(temporal.affect, realtimeState, ctx);
 
     const decision =
-      learnerCohort === 'control'
+      !emotionTrackingEnabled
         ? this.buildStaticDecision(
             {
               ...SCENARIOS.neutral,
-              triggerType: 'control_standard_flow',
-              triggerReason: 'control group uses standard feedback only',
+              triggerType: learnerCohort === 'control' ? 'control_standard_flow' : 'standard_flow_only',
+              triggerReason:
+                learnerCohort === 'control'
+                  ? 'control group uses standard feedback only'
+                  : 'emotion tracking is disabled for this learner',
               pedagogicalBasis:
-                'Control-group learners remain on the standard non-adaptive path and do not receive facial-expression-based interventions.',
+                learnerCohort === 'control'
+                  ? 'Control-group learners remain on the standard non-adaptive path and do not receive facial-expression-based interventions.'
+                  : 'Learners without emotion-tracking access remain on the standard non-adaptive path and do not receive facial-expression-based interventions.',
               expectedOutcome: 'Continue through the standard lesson flow without adaptive support.',
               learnerStateAfterAction: 'standard-control-flow',
             },
@@ -270,11 +288,11 @@ export class AdaptiveEngine {
             feedbackLoop,
           );
 
-    if (learnerCohort !== 'control') {
+    if (emotionTrackingEnabled) {
       await this.persistDecision(ctx, realtimeState, decision, temporal, learningContext, performance, engagement);
     }
 
-    if (learnerCohort !== 'control' && decision.intervention !== 'do_nothing') {
+    if (emotionTrackingEnabled && decision.intervention !== 'do_nothing') {
       const cooldownSeconds = decision.cooldownSeconds ?? DEFAULT_COOLDOWN_SEC;
       const cooldownUntil = new Date(Date.now() + cooldownSeconds * 1000).toISOString();
       await redis.set(
@@ -363,6 +381,16 @@ export class AdaptiveEngine {
       return (learner?.cohort as CohortType | undefined) ?? null;
     } catch (error) {
       logger.error('AdaptiveEngine: failed to resolve learner cohort', error);
+      return null;
+    }
+  }
+
+  private async resolveEmotionTrackingEnabled(learnerId: string): Promise<boolean | null> {
+    try {
+      const access = await resolveLearnerAccessSnapshot(learnerId, { allowCache: true });
+      return access.emotionTrackingEnabled;
+    } catch (error) {
+      logger.error('AdaptiveEngine: failed to resolve learner emotion access', error);
       return null;
     }
   }

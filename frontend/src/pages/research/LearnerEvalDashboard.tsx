@@ -19,6 +19,7 @@ import { useI18n } from '@/i18n';
 import EmotionHeatmap from '@/components/research/EmotionHeatmap';
 import TimeEngagementGrid from '@/components/research/TimeEngagementGrid';
 import { RESEARCH_EMOTION_ORDER, emotionDisplayName } from '@/components/research/emotionPresentation';
+import StatCard from '@/components/ui/StatCard';
 import SectionTitle from '@/components/ui/SectionTitle';
 import styles from './LearnerEvalDashboard.module.css';
 
@@ -297,15 +298,7 @@ export default function LearnerEvalDashboard() {
             tone: 'blue' as const,
           },
         ].map(({ label, value, icon: Icon, tone }) => (
-          <article key={label} className={styles.kpiCard}>
-            <div className={`${styles.kpiIcon} ${styles[`tone${capitalize(tone)}`]}`}>
-              <Icon size={18} />
-            </div>
-            <div className={styles.kpiCopy}>
-              <div className={styles.kpiValue}>{value}</div>
-              <div className={styles.kpiLabel}>{label}</div>
-            </div>
-          </article>
+          <StatCard key={label} icon={Icon} value={value} label={label} tone={tone} />
         ))}
       </section>
 

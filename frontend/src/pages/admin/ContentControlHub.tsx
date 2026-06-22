@@ -784,8 +784,8 @@ export default function ContentControlHub() {
     <div className={styles.page} dir={direction}>
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>منشئ المقرر البحثي</span>
-          <h1>منشئ المقرر البحثي</h1>
+          <span className={styles.eyebrow}>المقررات والدروس</span>
+          <h1>المقررات والدروس</h1>
           <p>
             تجربة تأليف نظيفة وموجّهة لبناء المقرر البحثي خطوة بخطوة: معلومات أساسية، هيكل الوحدات والدروس، الاختبارات،
             سياسة الدعم التكيفي، ثم المراجعة والنشر.

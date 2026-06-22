@@ -6,6 +6,11 @@ export const ar: TranslationDictionary = {
     ar: 'العربية',
     en: 'English',
   },
+  theme: {
+    label: 'مظهر الواجهة',
+    toDark: 'تفعيل الوضع الداكن',
+    toLight: 'تفعيل الوضع الفاتح',
+  },
   app: {
     brand: {
       platformName: 'منصة التدريب الذكي',
@@ -17,6 +22,8 @@ export const ar: TranslationDictionary = {
   },
   common: {
     loading: 'جاري التحميل...',
+    loadingLearnerJourney: 'جاري تحميل مسار المتعلم...',
+    preparingAssessment: 'جاري تهيئة مسار التقييم...',
     save: 'حفظ',
     cancel: 'إلغاء',
     close: 'إغلاق',
@@ -41,7 +48,7 @@ export const ar: TranslationDictionary = {
     },
     role: {
       learner: 'متعلم',
-      researchAdmin: 'مسؤول بحث',
+      researchAdmin: 'مدير',
     },
     errors: {
       generic: 'حدث خطأ غير متوقع. حاول مرة أخرى.',
@@ -52,10 +59,13 @@ export const ar: TranslationDictionary = {
   layout: {
     header: {
       toggleNavigation: 'فتح/إغلاق التنقل',
-      researchWorkspace: 'مساحة مسؤول البحث',
+      researchWorkspace: 'إدارة المنصة',
       learnerWorkspace: 'بيئة التعلم التكيفية',
       researchBadge: 'لوحة تحليلات جاهزة للبحث',
       controlGroupBadge: 'مسار قياسي للمجموعة الضابطة',
+      pendingApprovalBadge: 'بانتظار موافقة المسؤول',
+      experimentalSupportBadge: 'دعم تعلم مفعّل بالانفعال',
+      controlFlowBadge: 'مسار تعلم قياسي',
     },
     sidebar: {
       closeNavigation: 'إغلاق التنقل',
@@ -66,15 +76,16 @@ export const ar: TranslationDictionary = {
         pmTools: 'أدوات إدارة المشاريع',
         assessment: 'التقييم',
         help: 'دليل المساعدة',
-        researchAdmin: 'مسؤول البحث',
-        courseBuilder: 'منشئ المقرر',
+        researchAdmin: 'إدارة المنصة',
+        accessManagement: 'إدارة المستخدمين والمجموعات',
+        courseBuilder: 'المقررات والدروس',
         reports: 'تقارير الانفعالات',
         emotionValidation: 'مختبر تحقق الانفعالات',
         adaptiveDisplayCriteria: 'معايير عرض التكيف',
       },
       workspaceLabel: {
         learner: 'مساحة المتعلم',
-        researchAdmin: 'مساحة مسؤول البحث',
+        researchAdmin: 'إدارة المنصة',
       },
       workspaceText: {
         learner: 'اتبع مسارًا واضحًا مع دعم تكيفي وتقدم مرئي خطوة بخطوة.',
@@ -97,9 +108,9 @@ export const ar: TranslationDictionary = {
       learnerHelpSubtitle: 'دليل واضح للتنقل بين الدروس وإكمال الأنشطة والاستفادة من الدعم التكيفي.',
       pmToolsTitle: 'أدوات المشروع',
       pmToolsSubtitle: 'استخدم أدوات إدارة المشروع لدعم الأنشطة التعليمية والسيناريوهات.',
-      researchHomeTitle: 'مساحة مسؤول البحث',
+      researchHomeTitle: 'إدارة المنصة',
       researchHomeSubtitle: 'طبقة تحكم موحدة للتأليف، المتابعة، التحليلات، وتصدير البيانات البحثية.',
-      courseBuilderTitle: 'منشئ المقرر',
+      courseBuilderTitle: 'المقررات والدروس',
       courseBuilderSubtitle: 'نظّم الوحدات والدروس وعناصر الدرس والربط التكيفي ضمن مساحة تأليف واحدة.',
       reportsTitle: 'التقارير البحثية',
       reportsSubtitle: 'راجع تقدم المتعلمين وملخصات الانفعالات ونتائج التدخلات والتصدير الجاهز للتحليل.',
@@ -107,6 +118,8 @@ export const ar: TranslationDictionary = {
       emotionValidationSubtitle: 'اختبار مباشر عبر الكاميرا للتحقق من معقولية الاستشعار، جودة الثقة، واستقرار الكشف أثناء العروض التقديمية.',
       adaptiveDisplayCriteriaTitle: 'معايير قبول عرض التكيف',
       adaptiveDisplayCriteriaSubtitle: 'مرجع يوضح ما الذي ينبغي أن يراه المتعلم، وما الذي يجب إخفاؤه، وكيف تظهر التنبيهات التكيفية والتغذية الراجعة في التقييم.',
+      userManagementTitle: 'إدارة المستخدمين والمجموعات',
+      userManagementSubtitle: 'فعّل حسابات المتعلمين، وأدر الوصول، وتحكّم في تتبع الانفعالات للمجموعتين البحثيتين.',
       researchHelpTitle: 'مساعدة مسؤول البحث',
       researchHelpSubtitle: 'إرشادات تشغيلية لإدارة المحتوى والربط التكيفي وقراءة التحليلات والتصدير.',
       participantTitle: 'تحليلات المشارك',
@@ -131,7 +144,7 @@ export const ar: TranslationDictionary = {
         label: 'حساب مسؤول بحث تجريبي',
         description: 'يفتح مساحة مسؤول البحث الموحّدة مع منشئ المقرر والتقارير.',
       },
-      participantId: 'معرّف المشارك',
+      participantId: 'الاسم',
       participantPlaceholder: 'مثال: STEP-2026-001',
       password: 'كلمة المرور',
       submit: 'دخول',
@@ -285,6 +298,10 @@ export const ar: TranslationDictionary = {
         continue: 'تابع من آخر خطوة درسية وصلت إليها.',
         start: 'هذه الوحدة جاهزة لك متى أردت.',
       },
+      empty: {
+        title: 'لا توجد وحدات متاحة بعد',
+        hint: 'ستظهر وحداتك التعليمية هنا بمجرد نشرها.',
+      },
       lessonTypes: {
         guided: 'درس إرشادي',
         scenario: 'مهمة سيناريو',
@@ -302,6 +319,23 @@ export const ar: TranslationDictionary = {
       },
     },
     session: {
+      emotionPanel: {
+        title: 'مستشعر ومراقب المشاعر اللحظي',
+        cameraOffTitle: 'كاميرا المتعلم معطلة الآن',
+        cameraOffHint: 'اضغط "شغّل الكاميرا" للتحديد التلقائي للمشاعر.',
+        start: 'شغّل الكاميرا',
+        stop: 'إيقاف الكاميرا',
+        analysisTitle: 'تقييم تعبيرات الوجه التلقائي',
+        lastAnalysis: 'التحليل التلقائي الأخير للكاميرا:',
+        accuracy: 'الدقة:',
+        updateNote: 'يتم تحديث الملامح وتبعتها كل لحظة لمواءمة المسارات.',
+        confidence: 'دقة الثقة الوجدانية (Confidence):',
+        attention: 'جودة ونشاط التفاعل (Attention):',
+        faceDetected: 'تم رصد الوجه',
+        noFace: 'لا يوجد وجه',
+        starting: 'جارٍ تشغيل الكاميرا...',
+        waiting: 'بانتظار قراءة...',
+      },
       emotionLabel: {
         focused: 'انخراط مرتفع',
         clarification: 'يحتاج توضيحًا',
@@ -613,7 +647,7 @@ export const ar: TranslationDictionary = {
     },
     completion: {
       title: 'تم إكمال التدريب بنجاح',
-      subtitle: 'أكملت تسلسل التدريب المطلوب: الموافقة، الملف والإعداد، شاشة الجاهزية، الاختبار القبلي، الوحدات التدريبية، ثم الاختبار البعدي.',
+      subtitle: 'أكملت تسلسل التدريب بالكامل. إليك ملخصًا سريعًا للمراحل التي أنهيتها.',
       sequence: {
         consent: 'تسجيل الدخول والموافقة',
         setup: 'الملف والإعداد',
@@ -1551,10 +1585,20 @@ export const ar: TranslationDictionary = {
   research: {
     home: {
       eyebrow: 'مساحة موحدة بصلاحيات كاملة',
-      title: 'مسؤول البحث',
+      title: 'إدارة المنصة',
       lead: 'مركز تحكم واحد لتأليف التدريب الذكي، متابعة القواعد التكيفية، تحليلات المتعلمين، تقارير الانفعالات، والتصدير الجاهز للبحث.',
       badge: 'طبقة تحكم واعية بحثيًا',
       openWorkspace: 'فتح المساحة',
+      userManagementCardTitle: 'إدارة المستخدمين والمجموعات',
+      userManagementCardDescription: 'فعّل حسابات الطلاب، اضبط إتاحة تتبع الانفعالات للمجموعات، وأنشئ استثناءات فردية عند الحاجة.',
+      openManagementPanel: 'فتح لوحة الإدارة',
+      reportCatalogEyebrow: 'كتالوج التقارير البحثية',
+      reportCatalogTitle: 'التقارير الأساسية داخل حساب الباحث',
+      reportCatalogLead: 'تظهر هذه البطاقات نفس مجموعة التقارير الأساسية المستخدمة في العرض الأكاديمي، مع رابط مباشر إلى القسم المطابق داخل صفحة التقارير.',
+      openReportsPage: 'فتح صفحة التقارير',
+      reportWhatItShows: 'ما الذي يعرضه',
+      reportHowToRead: 'كيف يُفسَّر',
+      openThisReport: 'فتح هذا التقرير',
       summaryTitle: 'الشريحة المنفذة حاليًا',
       summaryItems: [
         'تم توحيد صلاحيات الباحث والإداري ضمن مساحة تشغيل واحدة.',

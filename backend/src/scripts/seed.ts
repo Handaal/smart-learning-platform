@@ -1088,6 +1088,30 @@ async function main() {
     console.log(`  Reflection prompt ${prompt.id}`);
   }
 
+  const cohortSettings = [
+    {
+      cohort: 'experimental' as const,
+      label: 'Experimental group demo',
+      emotionTrackingEnabled: true,
+    },
+    {
+      cohort: 'control' as const,
+      label: 'Control group demo',
+      emotionTrackingEnabled: false,
+    },
+  ];
+
+  for (const group of cohortSettings) {
+    await prisma.cohortSettings.upsert({
+      where: { cohort: group.cohort },
+      update: {
+        label: group.label,
+        emotionTrackingEnabled: group.emotionTrackingEnabled,
+      },
+      create: group,
+    });
+  }
+
   if (process.env.NODE_ENV !== 'production') {
     const demoUsers = [
       { participantId: 'EXP00000000000000001', cohort: 'experimental' as const, password: 'research2026', role: 'learner' as const },
@@ -1099,7 +1123,12 @@ async function main() {
       const existing = await prisma.learner.findUnique({ where: { participantId: user.participantId } });
       if (!existing) {
         const learner = await prisma.learner.create({
-          data: { participantId: user.participantId, cohort: user.cohort, role: user.role as any },
+          data: {
+            participantId: user.participantId,
+            cohort: user.cohort,
+            role: user.role as any,
+            isActive: true,
+          },
         });
         const hash = await bcrypt.hash(user.password, 12);
         await prisma.authCredential.create({
@@ -1109,7 +1138,12 @@ async function main() {
       } else if ((existing as any).role !== user.role) {
         await prisma.learner.update({
           where: { id: existing.id },
-          data: { role: user.role as any },
+          data: { role: user.role as any, isActive: true },
+        });
+      } else if (!existing.isActive) {
+        await prisma.learner.update({
+          where: { id: existing.id },
+          data: { isActive: true },
         });
       }
     }

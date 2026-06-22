@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/services/api';
@@ -58,6 +58,11 @@ export default function LoginPage() {
         participantId: me.data.participantId,
         cohort: me.data.cohort as any,
         role,
+        isActive: me.data.isActive,
+        groupLabel: me.data.groupLabel,
+        groupEmotionTrackingEnabled: me.data.groupEmotionTrackingEnabled,
+        emotionTrackingOverride: me.data.emotionTrackingOverride,
+        emotionTrackingEnabled: me.data.emotionTrackingEnabled,
       });
 
       if (role === 'research_admin') navigate('/research-admin');
@@ -85,11 +90,11 @@ export default function LoginPage() {
       <h2 className={styles.heading}>{t('auth.login.title')}</h2>
       <p className={styles.sub}>{t('auth.login.subtitle')}</p>
 
-      <section className={styles.demoPanel} aria-label={t('auth.login.demoTitle')}>
-        <div className={styles.demoHeader}>
+      <details className={styles.demoPanel}>
+        <summary className={styles.demoHeader}>
           <strong>{t('auth.login.demoTitle')}</strong>
           <span>{t('auth.login.demoSubtitle')}</span>
-        </div>
+        </summary>
         <div className={styles.demoList}>
           {demoAccounts.map((account) => (
             <button
@@ -113,7 +118,7 @@ export default function LoginPage() {
             </button>
           ))}
         </div>
-      </section>
+      </details>
 
       <form onSubmit={handleSubmit} className={styles.form} noValidate>
         <div className="form-group">
@@ -141,7 +146,7 @@ export default function LoginPage() {
             id="pass"
             type="password"
             className="input"
-            placeholder="••••••••"
+            placeholder="********"
             value={pass}
             onChange={(event) => setPass(event.target.value)}
             onKeyDown={handleInputEnter}
@@ -189,3 +194,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -2,6 +2,7 @@ import type { AssessmentDimension, AssessmentForm, Prisma, QuizScope } from '@pr
 import { prisma } from '../../lib/prisma';
 import { AppError } from '../../middleware/errorHandler';
 import { CompetencyTracker } from '../../services/CompetencyTracker';
+import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
 
 const tracker = new CompetencyTracker();
 const DEFAULT_COURSE_KEY = 'step-adaptive-training';
@@ -255,6 +256,11 @@ async function submitStructuredAssessment(assessmentId: string, input: Structure
 }
 
 export async function start(learnerId: string, form: AssessmentForm) {
+  const access = await resolveLearnerAccessSnapshot(learnerId);
+  if (!access.isActive) {
+    throw new AppError(403, 'Your account is awaiting admin approval', 'ACCOUNT_INACTIVE');
+  }
+
   const existingComplete = await prisma.assessment.findFirst({
     where: { learnerId, form: form as any, isComplete: true },
   });

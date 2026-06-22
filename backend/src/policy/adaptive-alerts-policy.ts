@@ -1,8 +1,15 @@
 export const ADAPTIVE_ALERTS_POLICY_VERSION = 'v2';
 
+/**
+ * Single source of truth for the emotion-confidence gate. Used for DB
+ * `isBelowThreshold` persistence, the WS monitor-only gate, and the adaptive
+ * decision gate so all three layers agree (previously 0.65/0.70 sprawl).
+ */
+export const EMOTION_CONFIDENCE_THRESHOLD = 0.6;
+
 export const ADAPTIVE_ALERTS_THRESHOLDS = {
-  emotionConfidenceThreshold: 0.7,
-  fallbackConfidenceThreshold: 0.7,
+  emotionConfidenceThreshold: EMOTION_CONFIDENCE_THRESHOLD,
+  fallbackConfidenceThreshold: EMOTION_CONFIDENCE_THRESHOLD,
   decisionWindowSec: 15,
   decisionTickSec: 5,
   lowFaceQualityThreshold: 0.55,

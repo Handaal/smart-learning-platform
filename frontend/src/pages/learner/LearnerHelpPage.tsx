@@ -17,7 +17,7 @@ type LocalizedHelpContent = {
 
 export default function LearnerHelpPage() {
   const { tm, t, language } = useI18n();
-  const cohort = useAuthStore((state) => state.cohort);
+  const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
 
   const controlHelp = useMemo<LocalizedHelpContent>(() => {
     if (language === 'ar') {
@@ -232,7 +232,7 @@ export default function LearnerHelpPage() {
   }, [language]);
 
   const helpContent: LocalizedHelpContent =
-    cohort === 'control'
+    !emotionTrackingEnabled
       ? controlHelp
       : {
           eyebrow: t('help.learner.eyebrow'),

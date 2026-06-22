@@ -201,6 +201,7 @@ export interface AdaptiveContext {
   learnerId: string;
   participantId: string;
   cohort?: CohortType;
+  emotionTrackingEnabled?: boolean;
   episodeId?: string;
   affectState: AffectState;
   emotionConfidence?: number;

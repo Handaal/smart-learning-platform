@@ -1,0 +1,327 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ---- Hero ---- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: clamp(20px, 2.4vw, 28px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--gradient-brand), var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--color-accent), var(--color-indigo) 55%, var(--color-coral));
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+}
+
+.lead {
+  margin: 0.75rem 0 0;
+  max-width: 62ch;
+  color: var(--color-text-2);
+}
+
+.heroStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ---- Group cards ---- */
+.groupGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.groupCard {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Colored identity rail — distinct hue per cohort so the two groups read apart at a glance. */
+.groupCard::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 4px;
+}
+
+.groupExperimental::before {
+  background: linear-gradient(180deg, var(--color-accent), var(--color-accent-2));
+}
+
+.groupControl::before {
+  background: linear-gradient(180deg, var(--color-indigo), var(--color-accent-blue));
+}
+
+.groupHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.groupHeadMain {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.groupIcon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.groupExperimental .groupIcon {
+  background: var(--color-accent-glow);
+  color: var(--color-accent);
+}
+
+.groupControl .groupIcon {
+  background: var(--color-indigo-soft);
+  color: var(--color-indigo);
+}
+
+.groupHead h2 {
+  margin: 0.15rem 0 0;
+  font-size: 1.1rem;
+}
+
+.groupLabel {
+  color: var(--color-text-3);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.groupMeta {
+  margin: 0;
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  color: var(--color-text-2);
+  font-size: 0.9rem;
+}
+
+.groupAction {
+  margin-top: auto;
+}
+
+/* ---- Management card ---- */
+.managementCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.managementHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.managementHead h2 {
+  margin: 0;
+}
+
+.managementHead p {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-2);
+  max-width: 52ch;
+}
+
+.filters {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  inset-inline-start: 12px;
+  color: var(--color-text-3);
+  pointer-events: none;
+}
+
+.search :global(.input) {
+  min-width: 240px;
+  padding-inline-start: 38px;
+}
+
+.filters :global(select.input) {
+  min-width: 150px;
+}
+
+.resultCount {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-3);
+}
+
+/* ---- Table ---- */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-soft);
+}
+
+.table th,
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--color-border-soft);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.table tbody tr:hover {
+  background: rgba(18, 148, 139, 0.05);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table thead th {
+  color: var(--color-text-2);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.identityCell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.identityCell strong {
+  font-size: 0.92rem;
+}
+
+.identityText span,
+.overrideHint {
+  color: var(--color-text-3);
+  font-size: 0.78rem;
+}
+
+.accountCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.overrideControl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 150px;
+}
+
+.actionsCell {
+  text-align: end;
+}
+
+@media (max-width: 960px) {
+  .hero,
+  .managementHead {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .heroStats {
+    width: 100%;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .search,
+  .search :global(.input),
+  .filters :global(select.input) {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
+}

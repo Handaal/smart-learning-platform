@@ -9,6 +9,7 @@ import {
   normalizeParticipantId,
 } from '../../lib/participantId';
 import { AppError } from '../../middleware/errorHandler';
+import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
 import type { CohortType, UserRole } from '../../types';
 
 const JWT_SECRET          = process.env.JWT_SECRET!;
@@ -66,7 +67,12 @@ export async function register(input: RegisterInput) {
   if (existing) throw new AppError(409, 'Participant ID already registered', 'DUPLICATE_ID');
 
   const learner = await prisma.learner.create({
-    data: { participantId, cohort: input.cohort as any, role: normalizedRole as any },
+    data: {
+      participantId,
+      cohort: input.cohort as any,
+      role: normalizedRole as any,
+      isActive: normalizedRole === 'research_admin',
+    },
   });
 
   const hash = await bcrypt.hash(input.password, 12);
@@ -176,8 +182,14 @@ export async function getMe(learnerId: string) {
     },
   });
   if (!learner) throw new AppError(404, 'Learner not found', 'NOT_FOUND');
+  const access = await resolveLearnerAccessSnapshot(learnerId);
   return {
     ...learner,
     role: normalizeUserRole((learner as any).role ?? inferRoleFromParticipantId(learner.participantId)),
+    isActive: access.isActive,
+    groupLabel: access.groupLabel,
+    groupEmotionTrackingEnabled: access.groupEmotionTrackingEnabled,
+    emotionTrackingOverride: access.emotionTrackingOverride,
+    emotionTrackingEnabled: access.emotionTrackingEnabled,
   };
 }

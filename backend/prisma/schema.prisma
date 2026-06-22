@@ -141,6 +141,7 @@ model Learner {
   createdAt     DateTime  @default(now()) @map("created_at")
   lastActive    DateTime? @map("last_active")
   isActive      Boolean   @default(true) @map("is_active")
+  emotionTrackingOverride Boolean? @map("emotion_tracking_override")
 
   // Relations
   learnerProfile    LearnerProfile?
@@ -159,6 +160,17 @@ model Learner {
   artifactSubmissions ArtifactSubmission[]
 
   @@map("learner")
+}
+
+model CohortSettings {
+  id                     String     @id @default(uuid())
+  cohort                 CohortType @unique
+  label                  String
+  emotionTrackingEnabled Boolean    @default(false) @map("emotion_tracking_enabled")
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  @@map("cohort_settings")
 }
 
 model LearnerProfile {

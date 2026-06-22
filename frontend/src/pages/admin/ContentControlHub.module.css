@@ -1,5 +1,6 @@
 .page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   padding-block-end: 72px;
   animation: fadeUp 0.3s ease both;
@@ -20,7 +21,7 @@
 .previewModal {
   border: 1px solid var(--color-border);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -32,7 +33,7 @@
   padding: clamp(22px, 2vw, 28px);
   background:
     radial-gradient(circle at top right, rgba(18, 148, 139, 0.14), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 248, 240, 0.98));
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .heroCopy {
@@ -94,7 +95,7 @@
   width: fit-content;
   border-radius: 999px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(247, 244, 236, 0.78);
+  background: var(--color-surface);
   color: var(--color-text-2);
   padding: 8px 12px;
   font-size: 0.8rem;
@@ -133,7 +134,7 @@
   display: grid;
   gap: 14px;
   padding: 18px;
-  background: linear-gradient(180deg, rgba(251, 248, 241, 0.96), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .railHead {
@@ -154,7 +155,7 @@
   width: 100%;
   border: 1px solid transparent;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-surface);
   padding: 12px;
   text-align: start;
   cursor: pointer;
@@ -212,7 +213,7 @@
   gap: 10px;
   border-radius: 18px;
   border: 1px dashed rgba(201, 137, 26, 0.28);
-  background: rgba(255, 251, 244, 0.9);
+  background: var(--color-surface);
   padding: 14px;
 }
 
@@ -281,7 +282,7 @@
 }
 
 .statusDraft {
-  color: #9a6b1b;
+  color: var(--color-amber);
   background: rgba(201, 137, 26, 0.14);
 }
 
@@ -437,7 +438,7 @@
   gap: 8px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(247, 252, 255, 0.88);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
 }
 
@@ -540,7 +541,7 @@
   gap: 10px;
   border-radius: 18px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--color-surface);
   padding: 14px;
 }
 
@@ -585,7 +586,7 @@
   padding: 18px;
   border-radius: 20px;
   border: 1px dashed var(--color-border);
-  background: rgba(250, 247, 238, 0.72);
+  background: var(--color-surface);
   color: var(--color-text-2);
   text-align: center;
 }
@@ -620,7 +621,7 @@
   gap: 12px;
   border-radius: 18px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--color-surface);
   padding: 14px;
 }
 
@@ -656,7 +657,7 @@
 
 .selectorChip {
   border: 1px solid var(--color-border-soft);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
 }
@@ -686,12 +687,12 @@
   gap: 4px;
   padding: 10px 12px;
   border-radius: 16px;
-  background: rgba(247, 252, 255, 0.88);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
 }
 
 .lockChip {
-  color: #8d5c16;
+  color: var(--color-amber);
   background: rgba(201, 137, 26, 0.12);
 }
 
@@ -712,7 +713,7 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(247, 252, 255, 0.72);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
 }
 

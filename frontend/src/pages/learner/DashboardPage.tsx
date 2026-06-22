@@ -6,21 +6,30 @@ import { learnerApi, sessionApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
 import SectionTitle from '@/components/ui/SectionTitle';
+import StatCard from '@/components/ui/StatCard';
+import StatusBadge, { type BadgeStatus } from '@/components/ui/StatusBadge';
+import EmptyState from '@/components/ui/EmptyState';
+import Skeleton from '@/components/ui/Skeleton';
 import styles from './DashboardPage.module.css';
 
 export default function DashboardPage() {
   const learnerId = useAuthStore((state) => state.learnerId)!;
+  const isActive = useAuthStore((state) => state.isActive);
+  const groupLabel = useAuthStore((state) => state.groupLabel);
+  const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
   const navigate = useNavigate();
   const { t, isRtl } = useI18n();
 
-  const { data: progress } = useQuery({
+  const { data: progress, isLoading: progressLoading } = useQuery({
     queryKey: ['progress', learnerId],
     queryFn: () => learnerApi.getProgress(learnerId),
+    enabled: isActive !== false,
   });
 
   const { data: sessions } = useQuery({
     queryKey: ['sessions', learnerId],
     queryFn: () => sessionApi.getByLearner(learnerId),
+    enabled: isActive !== false,
   });
 
   const prog = (progress?.data as any) ?? {};
@@ -63,53 +72,55 @@ export default function DashboardPage() {
     navigate(`/session/${(sess as any)?.data?.id}`);
   }
 
-  function statusLabel(status: string) {
-    if (status === 'complete') return t('common.status.complete');
-    if (status === 'in_progress') return t('common.status.inProgress');
-    return t('common.status.notStarted');
-  }
+  const STATUS_LABEL: Record<string, string> = {
+    complete:    t('common.status.complete'),
+    in_progress: t('common.status.inProgress'),
+  };
+  const statusLabel = (status: string) => STATUS_LABEL[status] ?? t('common.status.notStarted');
 
-  function sessionStatusLabel(status: string) {
-    if (status === 'completed') return t('learner.dashboard.sessionStatus.completed', 'Completed');
-    return t('learner.dashboard.sessionStatus.interrupted', 'Ready to resume');
-  }
+  const moduleBadgeStatus = (module: any): BadgeStatus =>
+    module.isLocked
+      ? 'locked'
+      : module.status === 'complete'
+        ? 'complete'
+        : module.status === 'in_progress'
+          ? 'in_progress'
+          : 'pending';
 
-  function nextActionLabel(value: string) {
-    if (value === 'resume_session') return t('learner.dashboard.nextAction.resume', 'Resume');
-    if (value === 'review_module') return t('learner.dashboard.nextAction.review', 'Review this unit');
-    if (value === 'resume_current_activity') return t('learner.dashboard.nextAction.resumeCurrent', 'Resume your current activity');
-    if (value === 'continue_current_unit') return t('learner.dashboard.nextAction.continueCurrent', 'Continue this unit');
-    if (value === 'start_next_unit') return t('learner.dashboard.nextAction.startNext', 'Start the next unit');
-    if (value === 'start_first_unit') return t('learner.dashboard.nextAction.startFirst', 'Start the first unit');
-    if (value === 'complete_previous_unit') return t('learner.dashboard.nextAction.completePrevious', 'Finish the previous unit first');
-    if (value === 'complete_previous_unit_and_pass_checkpoint') {
-      return t('learner.dashboard.nextAction.completePreviousAndCheckpoint', 'Finish the previous unit and pass its checkpoint');
-    }
-    return t('learner.dashboard.nextAction.continue', 'Continue');
-  }
+  const SESSION_STATUS_LABEL: Record<string, string> = {
+    completed: t('learner.dashboard.sessionStatus.completed', 'Completed'),
+  };
+  const sessionStatusLabel = (status: string) =>
+    SESSION_STATUS_LABEL[status] ?? t('learner.dashboard.sessionStatus.interrupted', 'Ready to resume');
 
-  function unlockRuleLabel(value: string | null | undefined) {
-    if (value === 'complete_previous_unit_and_pass_checkpoint') {
-      return t(
-        'learner.dashboard.unlock.completePreviousAndCheckpoint',
-        'Finish the previous unit and pass its checkpoint to open this one.',
-      );
-    }
-    if (value === 'complete_previous_unit') {
-      return t('learner.dashboard.unlock.completePrevious', 'Finish the previous unit to open this one.');
-    }
-    return t('learner.dashboard.unlock.default', 'Complete the step before this unit to open it.');
-  }
+  const NEXT_ACTION_LABEL: Record<string, string> = {
+    resume_session:                              t('learner.dashboard.nextAction.resume', 'Resume'),
+    review_module:                               t('learner.dashboard.nextAction.review', 'Review this unit'),
+    resume_current_activity:                     t('learner.dashboard.nextAction.resumeCurrent', 'Resume your current activity'),
+    continue_current_unit:                       t('learner.dashboard.nextAction.continueCurrent', 'Continue this unit'),
+    start_next_unit:                             t('learner.dashboard.nextAction.startNext', 'Start the next unit'),
+    start_first_unit:                            t('learner.dashboard.nextAction.startFirst', 'Start the first unit'),
+    complete_previous_unit:                      t('learner.dashboard.nextAction.completePrevious', 'Finish the previous unit first'),
+    complete_previous_unit_and_pass_checkpoint:  t('learner.dashboard.nextAction.completePreviousAndCheckpoint', 'Finish the previous unit and pass its checkpoint'),
+  };
+  const nextActionLabel = (value: string) => NEXT_ACTION_LABEL[value] ?? t('learner.dashboard.nextAction.continue', 'Continue');
 
-  function competencyLabelFromKey(value: string | null | undefined) {
-    if (!value) return '--';
-    if (value === 'scoping') return t('learner.dashboard.competencies.scoping', 'Scoping');
-    if (value === 'planning') return t('learner.dashboard.competencies.planning', 'Planning');
-    if (value === 'communication') return t('learner.dashboard.competencies.communication', 'Communication');
-    if (value === 'risk') return t('learner.dashboard.competencies.risk', 'Risk');
-    if (value === 'decisions') return t('learner.dashboard.competencies.decisions', 'Decisions');
-    return value;
-  }
+  const UNLOCK_RULE_LABEL: Record<string, string> = {
+    complete_previous_unit_and_pass_checkpoint: t('learner.dashboard.unlock.completePreviousAndCheckpoint', 'Finish the previous unit and pass its checkpoint to open this one.'),
+    complete_previous_unit:                     t('learner.dashboard.unlock.completePrevious', 'Finish the previous unit to open this one.'),
+  };
+  const unlockRuleLabel = (value: string | null | undefined) =>
+    (value ? UNLOCK_RULE_LABEL[value] : undefined) ?? t('learner.dashboard.unlock.default', 'Complete the step before this unit to open it.');
+
+  const COMPETENCY_LABEL: Record<string, string> = {
+    scoping:       t('learner.dashboard.competencies.scoping', 'Scoping'),
+    planning:      t('learner.dashboard.competencies.planning', 'Planning'),
+    communication: t('learner.dashboard.competencies.communication', 'Communication'),
+    risk:          t('learner.dashboard.competencies.risk', 'Risk'),
+    decisions:     t('learner.dashboard.competencies.decisions', 'Decisions'),
+  };
+  const competencyLabelFromKey = (value: string | null | undefined) =>
+    value ? (COMPETENCY_LABEL[value] ?? value) : '--';
 
   function supportPromptText(prompt: any) {
     const key = String(prompt?.messageKey ?? '');
@@ -129,6 +140,79 @@ export default function DashboardPage() {
       );
     }
     return t('learner.dashboard.support.default', 'Adaptive support is available based on your recent learning state.');
+  }
+
+  if (isActive === false) {
+    return (
+      <div className={styles.page}>
+        <section className={styles.hero}>
+          <div className={styles.heroContent}>
+            <h1 className={styles.greeting}>{t('learner.dashboard.pending.title', 'Your account is waiting for approval')}</h1>
+            <p className={styles.sub}>
+              {t(
+                'learner.dashboard.pending.body',
+                'You can sign in successfully, but your learning content will stay locked until the admin activates your account.',
+              )}
+            </p>
+          </div>
+        </section>
+
+        <div className={styles.resumeGrid}>
+          <section className={`card ${styles.resumeCard}`}>
+            <div className={styles.resumeHead}>
+              <h2>{t('learner.dashboard.pending.statusTitle', 'Current access status')}</h2>
+            </div>
+            <p className={styles.resumeText}>
+              {t('learner.dashboard.pending.group', 'Assigned group')}: <strong>{groupLabel ?? '--'}</strong>
+            </p>
+            <p className={styles.resumeText}>
+              {t('learner.dashboard.pending.tracker', 'Emotion tracker access')}: <strong>{emotionTrackingEnabled ? 'Enabled' : 'Disabled'}</strong>
+            </p>
+            <p className={styles.resumeText}>
+              {t(
+                'learner.dashboard.pending.nextStep',
+                'Once approved, the onboarding flow and learning modules will open automatically on this account.',
+              )}
+            </p>
+          </section>
+
+          <section className={`card ${styles.nextCard}`}>
+            <h2>{t('learner.dashboard.pending.helpTitle', 'What you can do now')}</h2>
+            <div className={styles.summaryRow}>
+              <span>{t('learner.dashboard.pending.helpOne', 'Keep your participant ID and password ready for the next login.')}</span>
+            </div>
+            <div className={styles.summaryRow}>
+              <span>{t('learner.dashboard.pending.helpTwo', 'Contact the study administrator if approval is taking longer than expected.')}</span>
+            </div>
+            <div className={styles.summaryRow}>
+              <span>{t('learner.dashboard.pending.helpThree', 'You can still open the learner help page from the sidebar.')}</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+  if (progressLoading && !progress) {
+    return (
+      <div className={styles.page}>
+        <section className={styles.hero}>
+          <div className={styles.heroContent}>
+            <Skeleton variant="line" lines={2} />
+          </div>
+        </section>
+        <div className={styles.resumeGrid}>
+          <div className="card"><Skeleton variant="line" lines={4} /></div>
+          <div className="card"><Skeleton variant="line" lines={4} /></div>
+        </div>
+        <div className={styles.stats}>
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -240,27 +324,11 @@ export default function DashboardPage() {
       <div className={styles.stats}>
         {[
           { icon: BookOpen, label: t('learner.dashboard.stats.modulesDone'), value: `${completed} / ${total}`, tone: 'teal' as const },
-          { icon: Clock, label: t('learner.dashboard.stats.sessions'), value: String(prog.completedSessions ?? 0), tone: 'teal' as const },
+          { icon: Clock, label: t('learner.dashboard.stats.sessions'), value: String(prog.completedSessions ?? 0), tone: 'indigo' as const },
           { icon: TrendingUp, label: t('learner.dashboard.stats.competency'), value: competency ? `${Math.round((competency.composite ?? 0) * 100)}%` : '--', tone: 'success' as const },
-          { icon: Flame, label: t('learner.dashboard.stats.streak'), value: `${streak} ${t('learner.dashboard.stats.days')}`, tone: 'amber' as const },
+          { icon: Flame, label: t('learner.dashboard.stats.streak'), value: `${streak} ${t('learner.dashboard.stats.days')}`, tone: 'coral' as const },
         ].map(({ icon: Icon, label, value, tone }) => (
-          <div className={`card ${styles.statCard}`} key={label}>
-            <div
-              className={`${styles.statIcon} ${
-                tone === 'success'
-                  ? styles.statIconSuccess
-                  : tone === 'amber'
-                    ? styles.statIconAmber
-                    : styles.statIconTeal
-              }`}
-            >
-              <Icon size={18} />
-            </div>
-            <div className={styles.statCardBody}>
-              <div className={styles.statValue}>{value}</div>
-              <div className={styles.statLabel}>{label}</div>
-            </div>
-          </div>
+          <StatCard key={label} icon={Icon} value={value} label={label} tone={tone} />
         ))}
       </div>
 
@@ -308,11 +376,11 @@ export default function DashboardPage() {
           <SectionTitle
             icon={Target}
             title={t('learner.dashboard.moduleSectionTitle')}
-            tone="blue"
+            tone="indigo"
           />
           <div className={styles.moduleList}>
             {modules.length === 0 ? (
-              <p className={styles.emptyMessage}>{t('learner.dashboard.noModules')}</p>
+              <EmptyState compact icon={Target} title={t('learner.dashboard.noModules')} />
             ) : (
               modules.map((module: any) => (
                 <button
@@ -330,21 +398,14 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className={styles.moduleRight}>
-                    <span
-                      className={`badge ${
+                    <StatusBadge
+                      status={moduleBadgeStatus(module)}
+                      label={
                         module.isLocked
-                          ? 'badge-muted'
-                          : module.status === 'complete'
-                          ? 'badge-success'
-                          : module.status === 'in_progress'
-                            ? 'badge-teal'
-                            : 'badge-muted'
-                      }`}
-                    >
-                      {module.isLocked
-                        ? t('learner.modules.buttons.locked', 'Locked')
-                        : statusLabel(module.status)}
-                    </span>
+                          ? t('learner.modules.buttons.locked', 'Locked')
+                          : statusLabel(module.status)
+                      }
+                    />
                     <ArrowRight size={14} className={`${styles.moduleArrow} ${rtlArrowClass}`} />
                   </div>
                 </button>
@@ -359,7 +420,7 @@ export default function DashboardPage() {
           <SectionTitle
             icon={Clock}
             title={t('learner.dashboard.recentSessions')}
-            tone="amber"
+            tone="coral"
           />
           <div className={styles.sessionsTable}>
             <div className={styles.sessHeader}>
@@ -373,9 +434,10 @@ export default function DashboardPage() {
                 <span className={styles.sessModule}>{session.moduleTitle ?? session.moduleId}</span>
                 <span className={styles.sessDate}>{session.lessonTitle ?? '--'}</span>
                 <span className={styles.sessDuration}>
-                  <span className={`badge ${session.status === 'completed' ? 'badge-success' : 'badge-amber'}`}>
-                    {sessionStatusLabel(session.status)}
-                  </span>
+                  <StatusBadge
+                    status={session.status === 'completed' ? 'complete' : 'warning'}
+                    label={sessionStatusLabel(session.status)}
+                  />
                 </span>
                 <div className={styles.sessProg}>
                   <div className={`progress-track ${styles.sessionProgressTrack}`}>

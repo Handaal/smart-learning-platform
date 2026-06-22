@@ -18,21 +18,36 @@ import { authApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './Sidebar.module.css';
 
-const LEARNER_NAV = [
-  { to: '/dashboard', icon: LayoutDashboard, key: 'layout.sidebar.nav.dashboard' },
-  { to: '/modules', icon: BookOpen, key: 'layout.sidebar.nav.modules' },
-  { to: '/pm-tools', icon: Wrench, key: 'layout.sidebar.nav.pmTools' },
-  { to: '/assessment', icon: BarChart3, key: 'layout.sidebar.nav.assessment' },
-  { to: '/help', icon: CircleHelp, key: 'layout.sidebar.nav.help' },
+type NavItem = {
+  to: string;
+  icon: typeof LayoutDashboard;
+  key: string;
+  label: string;
+  arabicLabel?: string;
+};
+
+const LEARNER_NAV: NavItem[] = [
+  { to: '/dashboard', icon: LayoutDashboard, key: 'layout.sidebar.nav.dashboard', label: 'Dashboard' },
+  { to: '/modules', icon: BookOpen, key: 'layout.sidebar.nav.modules', label: 'Modules' },
+  { to: '/pm-tools', icon: Wrench, key: 'layout.sidebar.nav.pmTools', label: 'PM Tools' },
+  { to: '/assessment', icon: BarChart3, key: 'layout.sidebar.nav.assessment', label: 'Assessment' },
+  { to: '/help', icon: CircleHelp, key: 'layout.sidebar.nav.help', label: 'Help Guide' },
 ];
 
-const RESEARCH_ADMIN_NAV = [
-  { to: '/research-admin', icon: LayoutDashboard, key: 'layout.sidebar.nav.researchAdmin' },
-  { to: '/research-admin/course', icon: LibraryBig, key: 'layout.sidebar.nav.courseBuilder' },
-  { to: '/research-admin/reports', icon: FlaskConical, key: 'layout.sidebar.nav.reports' },
-  { to: '/research-admin/emotion-validation', icon: Camera, key: 'layout.sidebar.nav.emotionValidation' },
-  { to: '/research-admin/adaptive-display', icon: ListChecks, key: 'layout.sidebar.nav.adaptiveDisplayCriteria' },
-  { to: '/research-admin/help', icon: CircleHelp, key: 'layout.sidebar.nav.help' },
+const RESEARCH_ADMIN_NAV: NavItem[] = [
+  { to: '/research-admin', icon: LayoutDashboard, key: 'layout.sidebar.nav.researchAdmin', label: 'Research Admin' },
+  {
+    to: '/research-admin/access',
+    icon: BookOpen,
+    key: 'layout.sidebar.nav.accessManagement',
+    label: 'User & Group Management',
+    arabicLabel: 'إدارة المستخدمين والمجموعات',
+  },
+  { to: '/research-admin/course', icon: LibraryBig, key: 'layout.sidebar.nav.courseBuilder', label: 'Course Builder' },
+  { to: '/research-admin/reports', icon: FlaskConical, key: 'layout.sidebar.nav.reports', label: 'Emotion Reports' },
+  { to: '/research-admin/emotion-validation', icon: Camera, key: 'layout.sidebar.nav.emotionValidation', label: 'Emotion Validation Lab' },
+  { to: '/research-admin/adaptive-display', icon: ListChecks, key: 'layout.sidebar.nav.adaptiveDisplayCriteria', label: 'Adaptive Display Criteria' },
+  { to: '/research-admin/help', icon: CircleHelp, key: 'layout.sidebar.nav.help', label: 'Help Guide' },
 ];
 
 type Props = {
@@ -89,7 +104,7 @@ export default function Sidebar({ open, onClose }: Props) {
       </div>
 
       <nav className={styles.nav} aria-label={t('layout.sidebar.primaryNavigation')}>
-        {navItems.map(({ to, icon: Icon, key }) => (
+        {navItems.map(({ to, icon: Icon, key, label, arabicLabel }) => (
           <NavLink
             key={to}
             to={to}
@@ -99,7 +114,7 @@ export default function Sidebar({ open, onClose }: Props) {
             <span className={styles.navIcon}>
               <Icon size={18} />
             </span>
-            <span className={styles.navLabel}>{t(key)}</span>
+            <span className={styles.navLabel}>{arabicLabel && isRtl ? arabicLabel : t(key, label)}</span>
             <ChevronRight size={14} className={styles.chevron} style={isRtl ? { transform: 'rotate(180deg)' } : undefined} />
           </NavLink>
         ))}

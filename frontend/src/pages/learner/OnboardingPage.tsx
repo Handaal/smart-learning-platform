@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Rocket } from 'lucide-react';
 import { allowUnitsBeforePretest, writeLearnerOnboardingProgress } from '@/features/learnerJourney';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
 import { useLearnerJourney } from '@/hooks/useLearnerJourney';
@@ -13,11 +13,11 @@ const STEP_KEYS = ['consent', 'profile', 'ready'] as const;
 
 export default function OnboardingPage() {
   const learnerId = useAuthStore((state) => state.learnerId)!;
-  const cohort = useAuthStore((state) => state.cohort);
+  const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
   const navigate = useNavigate();
   const { t, isRtl } = useI18n();
   const { stage, refetch } = useLearnerJourney();
-  const isExperimentalGroup = cohort !== 'control';
+  const isExperimentalGroup = Boolean(emotionTrackingEnabled);
 
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -239,7 +239,7 @@ export default function OnboardingPage() {
 
       {step === 2 ? (
         <div className={`${styles.stepCard} ${styles.readyCard}`}>
-          <div className={styles.readyIcon}>{'\u{1F3AF}'}</div>
+          <div className={styles.readyIcon}><Rocket size={28} /></div>
           <h1>{t('learner.onboarding.ready.title', "You're all set!")}</h1>
           <p className={`${styles.intro} ${styles.readyIntro}`}>
             {t('learner.onboarding.ready.intro', '')}

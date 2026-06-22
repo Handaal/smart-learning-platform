@@ -1,8 +1,14 @@
 import crypto from 'crypto';
 import { Request } from 'express';
 import { prisma } from '../../lib/prisma';
-import { cache } from '../../lib/redis';
+import { cache, redis } from '../../lib/redis';
 import { AppError } from '../../middleware/errorHandler';
+import {
+  buildEffectiveEmotionTrackingEnabled,
+  clearLearnerAccessCache,
+  resolveCohortSettings,
+  resolveLearnerAccessSnapshot,
+} from '../../services/learnerAccess';
 
 const COMPETENCY_KEYS = ['scoping', 'planning', 'communication', 'risk', 'decisions'] as const;
 
@@ -66,6 +72,7 @@ export async function withdrawConsent(learnerId: string) {
 }
 
 export async function getProgress(learnerId: string) {
+  const access = await resolveLearnerAccessSnapshot(learnerId);
   const [moduleProgressRows, modules, latestCompetency, sessions] = await Promise.all([
     prisma.moduleProgress.findMany({
       where: { learnerId },
@@ -269,6 +276,7 @@ export async function getProgress(learnerId: string) {
   });
 
   return {
+    access,
     moduleProgress,
     latestCompetency: latestCompetency ?? null,
     sessionCount,
@@ -294,7 +302,10 @@ export async function getProgress(learnerId: string) {
 export async function listLearners(opts: { page: number; limit: number; cohort?: string }) {
   const { page, limit, cohort } = opts;
   const skip = (page - 1) * limit;
-  const where = cohort ? { cohort: cohort as any } : {};
+  const where = {
+    role: 'learner' as const,
+    ...(cohort ? { cohort: cohort as any } : {}),
+  };
 
   const [learners, total] = await Promise.all([
     prisma.learner.findMany({
@@ -304,11 +315,208 @@ export async function listLearners(opts: { page: number; limit: number; cohort?:
       select: {
         id: true, participantId: true, cohort: true,
         createdAt: true, lastActive: true, isActive: true,
+        emotionTrackingOverride: true,
       },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.learner.count({ where }),
   ]);
 
-  return { data: learners, total, page, limit };
+  const groups = await Promise.all([
+    resolveCohortSettings('experimental'),
+    resolveCohortSettings('control'),
+  ]);
+  const groupMap = new Map(groups.map((group) => [group.cohort, group]));
+
+  return {
+    data: learners.map((learner) => {
+      const group = groupMap.get(learner.cohort as 'experimental' | 'control');
+      const groupEmotionTrackingEnabled = group?.emotionTrackingEnabled ?? learner.cohort === 'experimental';
+      return {
+        ...learner,
+        groupLabel: group?.label ?? learner.cohort,
+        groupEmotionTrackingEnabled,
+        emotionTrackingEnabled: buildEffectiveEmotionTrackingEnabled(
+          groupEmotionTrackingEnabled,
+          learner.emotionTrackingOverride,
+        ),
+      };
+    }),
+    total,
+    page,
+    limit,
+  };
+}
+
+export async function getAdminOverview() {
+  const [groupRows, learners, counts] = await Promise.all([
+    Promise.all([resolveCohortSettings('experimental'), resolveCohortSettings('control')]),
+    prisma.learner.findMany({
+      where: { role: 'learner' },
+      orderBy: [{ createdAt: 'desc' }],
+      select: {
+        id: true,
+        participantId: true,
+        cohort: true,
+        createdAt: true,
+        lastActive: true,
+        isActive: true,
+        emotionTrackingOverride: true,
+      },
+    }),
+    prisma.learner.groupBy({
+      by: ['cohort'],
+      where: { role: 'learner' },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const countMap = new Map(counts.map((row) => [row.cohort, row._count._all]));
+  const groupMap = new Map(groupRows.map((group) => [group.cohort, group]));
+
+  return {
+    groups: groupRows.map((group) => ({
+      cohort: group.cohort,
+      label: group.label,
+      emotionTrackingEnabled: group.emotionTrackingEnabled,
+      learnerCount: countMap.get(group.cohort) ?? 0,
+    })),
+    learners: learners.map((learner) => {
+      const group = groupMap.get(learner.cohort as 'experimental' | 'control');
+      const groupEmotionTrackingEnabled = group?.emotionTrackingEnabled ?? learner.cohort === 'experimental';
+      return {
+        ...learner,
+        groupLabel: group?.label ?? learner.cohort,
+        groupEmotionTrackingEnabled,
+        emotionTrackingEnabled: buildEffectiveEmotionTrackingEnabled(
+          groupEmotionTrackingEnabled,
+          learner.emotionTrackingOverride,
+        ),
+      };
+    }),
+  };
+}
+
+export async function updateCohortEmotionTracking(
+  cohort: 'experimental' | 'control',
+  emotionTrackingEnabled: boolean,
+) {
+  const defaults = await resolveCohortSettings(cohort);
+  const updated = await prisma.cohortSettings.upsert({
+    where: { cohort: cohort as any },
+    update: {
+      label: defaults.label,
+      emotionTrackingEnabled,
+    },
+    create: {
+      cohort: cohort as any,
+      label: defaults.label,
+      emotionTrackingEnabled,
+    },
+  });
+
+  clearLearnerAccessCache();
+
+  return {
+    cohort: updated.cohort,
+    label: updated.label,
+    emotionTrackingEnabled: updated.emotionTrackingEnabled,
+  };
+}
+
+export async function updateLearnerAdminSettings(
+  learnerId: string,
+  changes: {
+    isActive?: boolean;
+    emotionTrackingOverride?: boolean | null;
+  },
+) {
+  const learner = await prisma.learner.findUnique({
+    where: { id: learnerId },
+    select: { id: true, role: true },
+  });
+
+  if (!learner) throw new AppError(404, 'Learner not found', 'NOT_FOUND');
+  if (learner.role !== 'learner') {
+    throw new AppError(403, 'Only learner accounts can be managed here', 'FORBIDDEN');
+  }
+
+  const updated = await prisma.learner.update({
+    where: { id: learnerId },
+    data: {
+      ...(typeof changes.isActive === 'boolean' ? { isActive: changes.isActive } : {}),
+      ...(Object.prototype.hasOwnProperty.call(changes, 'emotionTrackingOverride')
+        ? { emotionTrackingOverride: changes.emotionTrackingOverride ?? null }
+        : {}),
+    },
+    select: {
+      id: true,
+      participantId: true,
+      cohort: true,
+      createdAt: true,
+      lastActive: true,
+      isActive: true,
+      emotionTrackingOverride: true,
+    },
+  });
+
+  clearLearnerAccessCache(learnerId);
+
+  const access = await resolveLearnerAccessSnapshot(learnerId);
+  return {
+    ...updated,
+    groupLabel: access.groupLabel,
+    groupEmotionTrackingEnabled: access.groupEmotionTrackingEnabled,
+    emotionTrackingEnabled: access.emotionTrackingEnabled,
+  };
+}
+
+export async function deleteLearnerAccount(learnerId: string) {
+  const learner = await prisma.learner.findUnique({
+    where: { id: learnerId },
+    select: { id: true, role: true },
+  });
+
+  if (!learner) throw new AppError(404, 'Learner not found', 'NOT_FOUND');
+  if (learner.role !== 'learner') {
+    throw new AppError(403, 'Only learner accounts can be deleted here', 'FORBIDDEN');
+  }
+
+  const quizAttemptIds = await prisma.quizAttempt.findMany({
+    where: { learnerId },
+    select: { id: true },
+  });
+  const sessionIds = await prisma.session.findMany({
+    where: { learnerId },
+    select: { id: true },
+  });
+
+  await prisma.$transaction([
+    prisma.quizQuestionAttempt.deleteMany({
+      where: { attemptId: { in: quizAttemptIds.map((row) => row.id) } },
+    }),
+    prisma.quizAttempt.deleteMany({ where: { learnerId } }),
+    prisma.reflectionEntry.deleteMany({ where: { learnerId } }),
+    prisma.artifactSubmission.deleteMany({ where: { learnerId } }),
+    prisma.adaptiveEvent.deleteMany({ where: { learnerId } }),
+    prisma.behaviorWindow.deleteMany({ where: { learnerId } }),
+    prisma.emotionEvent.deleteMany({ where: { learnerId } }),
+    prisma.session.deleteMany({ where: { learnerId } }),
+    prisma.moduleProgress.deleteMany({ where: { learnerId } }),
+    prisma.competencyRecord.deleteMany({ where: { learnerId } }),
+    prisma.assessment.deleteMany({ where: { learnerId } }),
+    prisma.pseAssessment.deleteMany({ where: { learnerId } }),
+    prisma.consentRecord.deleteMany({ where: { learnerId } }),
+    prisma.learnerProfile.deleteMany({ where: { learnerId } }),
+    prisma.authCredential.deleteMany({ where: { learnerId } }),
+    prisma.learner.delete({ where: { id: learnerId } }),
+  ]);
+
+  await redis.del(`refresh:${learnerId}`);
+  clearLearnerAccessCache(learnerId);
+
+  return {
+    learnerId,
+    deletedSessionCount: sessionIds.length,
+  };
 }

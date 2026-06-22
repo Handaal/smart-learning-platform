@@ -1,5 +1,6 @@
 .page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   animation: fadeUp 0.3s ease both;
 }
@@ -20,7 +21,7 @@
   padding: clamp(18px, 2vw, 24px);
   background:
     radial-gradient(circle at top right, rgba(18, 148, 139, 0.13), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 244, 0.98));
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .eyebrow {
@@ -70,7 +71,7 @@
 }
 
 .statusneutral {
-  background: rgba(36, 49, 63, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   color: var(--color-text-2);
 }
 
@@ -168,7 +169,7 @@
 .currentStateBox {
   border-radius: 16px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--color-surface);
   padding: 14px;
 }
 
@@ -217,7 +218,7 @@
   padding: 12px;
   border-radius: 14px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(244, 239, 228, 0.56);
+  background: var(--color-bg);
 }
 
 .metricCard span {
@@ -236,7 +237,7 @@
   border: 1px solid var(--color-border-soft);
   border-radius: 14px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--color-surface);
 }
 
 .debugRow {
@@ -277,7 +278,7 @@
   padding: 10px;
   border: 1px solid var(--color-border-soft);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.84);
+  background: var(--color-surface);
 }
 
 .historyTitle {
@@ -300,7 +301,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-text);
-  background: rgba(244, 239, 228, 0.88);
+  background: var(--color-bg);
   border: 1px solid var(--color-border-soft);
 }
 
@@ -326,7 +327,7 @@
   gap: 10px;
   border: 1px solid var(--color-border-soft);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.84);
+  background: var(--color-surface);
   padding: 14px;
 }
 
@@ -380,7 +381,7 @@
 .logTable th {
   color: var(--color-text-2);
   font-weight: 700;
-  background: rgba(36, 49, 63, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .explainList {

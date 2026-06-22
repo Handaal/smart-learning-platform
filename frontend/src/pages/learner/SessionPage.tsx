@@ -12,16 +12,18 @@ import {
   Route,
 } from 'lucide-react';
 import { sessionApi, scenarioApi } from '@/services/api';
-import { EmotionTracker } from '@/services/emotionTracker';
+import { EmotionTracker, type EmotionTrackerDiagnostics } from '@/services/emotionTracker';
 import { useEmotionStore, type AdaptivePayload } from '@/store/emotionStore';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
 import { MOCK_MODULES, MOCK_SESSION_DETAIL, USE_MOCK } from '@/services/mockData';
 import AdaptiveAlertSurface from '@/components/emotion/AdaptiveAlertSurface';
+import LearnerEmotionPanel from '@/components/learner/LearnerEmotionPanel';
 import type { LessonQuiz } from '@/components/admin/LessonQuizBuilder';
 import LessonContentBlock, { type LessonContentElement } from '@/components/learner/LessonContentBlock';
 import LessonQuizPanel from '@/components/learner/LessonQuizPanel';
+import Skeleton from '@/components/ui/Skeleton';
 import type { LearnerStepPresentation, LearnerStepRuntimeState } from '@/components/learner/lessonFlow';
 import { insertAdaptiveIntoBaseline } from '@/utils/adaptivePlacement';
 import {
@@ -534,13 +536,16 @@ export default function SessionPage() {
   const { t, isRtl } = useI18n();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const learnerCohort = useAuthStore((state) => state.cohort);
+  const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackerRef = useRef<EmotionTracker | null>(null);
   const hydratedEpisodeRef = useRef(false);
   const stepHeaderRef = useRef<HTMLDivElement | null>(null);
 
   const [wsReady, setWsReady] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [streamReady, setStreamReady] = useState(false);
+  const [emotionDiagnostics, setEmotionDiagnostics] = useState<EmotionTrackerDiagnostics | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [furthestLessonIndexReached, setFurthestLessonIndexReached] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -566,6 +571,7 @@ export default function SessionPage() {
   });
 
   const currentState = useEmotionStore((state) => state.currentState);
+  const emotionConfidence = useEmotionStore((state) => state.confidence);
   const pendingAdaptiveAlert = useEmotionStore((state) => state.pendingAdaptiveAlert);
   const setAffectState = useEmotionStore((state) => state.setAffectState);
   const setPendingAdaptiveAlert = useEmotionStore((state) => state.setPendingAdaptiveAlert);
@@ -609,7 +615,7 @@ export default function SessionPage() {
   const lessonQuizzes = lessonDetail?.quizzes ?? [];
   // Control-group learners stay on the standard lesson path. The
   // existing adaptive model remains active only for the experimental group.
-  const adaptiveExperienceEnabled = learnerCohort !== 'control';
+  const adaptiveExperienceEnabled = Boolean(emotionTrackingEnabled);
   const pendingScenarioKey =
     pendingAdaptiveAlert?.scenarioKey ?? mapTriggerTypeToState(pendingAdaptiveAlert?.triggerType);
   const adaptiveNoticeState = useMemo(
@@ -904,16 +910,23 @@ export default function SessionPage() {
 
   useEffect(() => {
     const episodeId = lesson?.id ?? session?.episodeId ?? 'E1';
-    if (!sessionId || !videoRef.current || USE_MOCK || !adaptiveExperienceEnabled) {
+    if (!sessionId || !videoRef.current || USE_MOCK || !adaptiveExperienceEnabled || !cameraEnabled) {
       setWebcamActive(false);
+      setStreamReady(false);
       return;
     }
+
+    let cancelled = false;
 
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: 'user', width: 320 } })
       .then((stream) => {
-        if (!videoRef.current) return;
+        if (cancelled || !videoRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         videoRef.current.srcObject = stream;
+        setStreamReady(true);
 
         const tracker = new EmotionTracker(sessionId, episodeId);
         tracker.onStateUpdate = (state) => {
@@ -928,6 +941,9 @@ export default function SessionPage() {
           setPendingAdaptiveAlert(decision);
           if (decision.scaffoldTo) setScaffoldLevel(decision.scaffoldTo);
         };
+        tracker.onDiagnostics = (snapshot) => {
+          setEmotionDiagnostics(snapshot);
+        };
 
         tracker.initialize(videoRef.current).then(() => {
           setWsReady(true);
@@ -935,13 +951,21 @@ export default function SessionPage() {
         });
         trackerRef.current = tracker;
       })
-      .catch(() => setWebcamActive(false));
+      .catch(() => {
+        setWebcamActive(false);
+        setStreamReady(false);
+      });
 
     return () => {
+      cancelled = true;
       trackerRef.current?.stopTracking();
+      trackerRef.current = null;
       setWebcamActive(false);
+      setStreamReady(false);
+      setEmotionDiagnostics(null);
       if (videoRef.current?.srcObject) {
         (videoRef.current.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
       }
     };
   }, [
@@ -954,6 +978,7 @@ export default function SessionPage() {
     setScaffoldLevel,
     setWebcamActive,
     adaptiveExperienceEnabled,
+    cameraEnabled,
   ]);
 
   useEffect(() => {
@@ -1149,8 +1174,6 @@ export default function SessionPage() {
 
   return (
     <div className={styles.page}>
-      <video ref={videoRef} className={styles.hiddenVideo} muted playsInline aria-hidden="true" />
-
       {showOutline ? <button className={styles.drawerBackdrop} onClick={() => setShowOutline(false)} aria-label={t('layout.sidebar.closeNavigation')} /> : null}
 
       <header className={styles.header}>
@@ -1181,7 +1204,7 @@ export default function SessionPage() {
         </div>
       </header>
 
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${adaptiveExperienceEnabled ? styles.layoutWithPanel : ''}`}>
         <aside className={`${styles.outlineDrawer} ${showOutline ? styles.outlineDrawerOpen : ''}`}>
           <section className={styles.outlineSection}>
             <div className={styles.outlineHead}>
@@ -1260,7 +1283,13 @@ export default function SessionPage() {
         <main className={styles.main}>
           <section className={styles.player}>
             {lessonLoading ? (
-              <div className={styles.emptyState}>{t('common.loading')}</div>
+              <div className={styles.stepStage}>
+                <Skeleton variant="line" lines={2} />
+                <div style={{ height: 12 }} />
+                <Skeleton variant="block" height={180} />
+                <div style={{ height: 12 }} />
+                <Skeleton variant="line" lines={3} />
+              </div>
             ) : !lessonSteps.length ? (
               <div className={styles.emptyState}>{t('common.errors.unavailable')}</div>
             ) : currentStep ? (
@@ -1373,6 +1402,21 @@ export default function SessionPage() {
             />
           ) : null}
 
+          <div className={styles.stepStatusBar}>
+            <div className={styles.stepStatusText}>
+              <strong>{footerNoticeTitle}</strong>
+              <p>{footerNoticeBody}</p>
+            </div>
+            <span className={styles.stepStatusCount}>
+              {currentStep
+                ? t('learner.session.flow.currentStepSummary', 'Step {current} of {total}', {
+                    current: currentStepIndex + 1,
+                    total: lessonSteps.length,
+                  })
+                : t('layout.pageMeta.sessionTitle')}
+            </span>
+          </div>
+
           <footer className={styles.navigationBar}>
             <button
               className="btn btn-secondary"
@@ -1383,19 +1427,6 @@ export default function SessionPage() {
               <ArrowRight size={14} style={isRtl ? { transform: 'rotate(180deg)' } : undefined} />
               {t('common.previous')}
             </button>
-
-            <div className={styles.navigationCenter}>
-              <span>
-                {currentStep
-                  ? t('learner.session.flow.currentStepSummary', 'Step {current} of {total}', {
-                      current: currentStepIndex + 1,
-                      total: lessonSteps.length,
-                    })
-                  : t('layout.pageMeta.sessionTitle')}
-              </span>
-              <strong>{footerNoticeTitle}</strong>
-              <p>{footerNoticeBody}</p>
-            </div>
 
             <button
               className="btn btn-primary"
@@ -1408,6 +1439,18 @@ export default function SessionPage() {
             </button>
           </footer>
         </main>
+
+        {adaptiveExperienceEnabled ? (
+          <LearnerEmotionPanel
+            videoRef={videoRef}
+            cameraEnabled={cameraEnabled}
+            onToggleCamera={() => setCameraEnabled((on) => !on)}
+            emotionState={currentState}
+            confidence={emotionConfidence}
+            diagnostics={emotionDiagnostics}
+            streamReady={streamReady}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@
   gap: 20px;
   min-height: var(--header-height);
   padding: 16px clamp(16px, 2vw, 28px);
-  background: rgba(250, 246, 238, 0.92);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-soft);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -49,8 +49,8 @@
 
 .title {
   margin: 0;
-  font-size: clamp(1.2rem, 2vw, 1.65rem);
-  line-height: 1.15;
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  line-height: 1.2;
 }
 
 .subtitle {

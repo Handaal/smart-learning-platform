@@ -34,7 +34,10 @@ from sklearn.metrics       import (
 )
 
 FEATURES = ['au1', 'au4', 'au6', 'au12', 'au20', 'au23']
-LABELS   = ['Flow', 'Confusion', 'Frustration', 'Anxiety', 'Boredom', 'Neutral']
+# Canonical state names (must match CanonicalEmotionState used across the stack)
+# so the trained RandomForest emits states the backend understands directly.
+LABELS   = ['high_engagement', 'confusion', 'frustration', 'test_anxiety',
+            'boredom_disengagement', 'neutral']
 MIN_SAMPLES_PER_CLASS = 10
 
 
