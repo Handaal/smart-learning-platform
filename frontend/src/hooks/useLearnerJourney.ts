@@ -9,8 +9,6 @@ import { useAuthStore } from '@/store/authStore';
 
 export type LearnerJourneyStage =
   | 'pending_approval'
-  | 'consent'
-  | 'setup'
   | 'ready'
   | 'pretest'
   | 'training'
@@ -29,13 +27,6 @@ export function useLearnerJourney() {
   const setUser = useAuthStore((state) => state.setUser);
   const isEnabled = Boolean(learnerId);
   const onboardingProgress = useLearnerOnboardingProgress(learnerId);
-
-  const consentQuery = useQuery({
-    queryKey: ['journey', 'consent', learnerId],
-    queryFn: () => learnerApi.getConsent(learnerId!),
-    enabled: isEnabled,
-    staleTime: 60_000,
-  });
 
   const progressQuery = useQuery({
     queryKey: ['journey', 'progress', learnerId],
@@ -81,7 +72,6 @@ export function useLearnerJourney() {
   }, [isActive, progressQuery.data, setUser]);
 
   const state = useMemo(() => {
-    const hasConsent = Boolean((consentQuery.data as { data?: unknown } | undefined)?.data);
     const assessmentRows = ((assessmentsQuery.data as { data?: unknown[] } | undefined)?.data ?? []) as unknown[];
     const hasPretest = assessmentRows.some((row) => isCompletedAssessment(row, 'pre'));
     const hasPosttest = assessmentRows.some((row) => isCompletedAssessment(row, 'post'));
@@ -94,8 +84,6 @@ export function useLearnerJourney() {
 
     let stage: LearnerJourneyStage = 'training';
     if (isActive === false) stage = 'pending_approval';
-    else if (!hasConsent) stage = 'consent';
-    else if (!hasPretest && !onboardingProgress.profileComplete) stage = 'setup';
     else if (!hasPretest && !onboardingProgress.readyAcknowledged) stage = 'ready';
     else if (!hasPretest) stage = 'pretest';
     else if (allUnitsComplete && !hasPosttest) stage = 'posttest';
@@ -103,7 +91,6 @@ export function useLearnerJourney() {
 
     return {
       stage,
-      hasConsent,
       hasPretest,
       hasPosttest,
       allUnitsComplete,
@@ -112,14 +99,14 @@ export function useLearnerJourney() {
       onboardingProgress,
       allowUnitsBeforePretest,
     };
-  }, [assessmentsQuery.data, consentQuery.data, isActive, onboardingProgress, progressQuery.data]);
+  }, [assessmentsQuery.data, isActive, onboardingProgress, progressQuery.data]);
 
   return {
     ...state,
-    isLoading: consentQuery.isLoading || progressQuery.isLoading || assessmentsQuery.isLoading,
-    isError: consentQuery.isError || progressQuery.isError || assessmentsQuery.isError,
+    isLoading: progressQuery.isLoading || assessmentsQuery.isLoading,
+    isError: progressQuery.isError || assessmentsQuery.isError,
     refetch: async () => {
-      await Promise.allSettled([consentQuery.refetch(), progressQuery.refetch(), assessmentsQuery.refetch()]);
+      await Promise.allSettled([progressQuery.refetch(), assessmentsQuery.refetch()]);
     },
   };
 }

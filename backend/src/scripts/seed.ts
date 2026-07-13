@@ -178,6 +178,107 @@ async function main() {
       },
     },
     {
+      id: 'LC-M1-E1-TEXT-CLARIFY',
+      episodeId: 'M1-E1',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'confusion' as const,
+      scaffoldLevel: 4,
+      isEnrichment: false,
+      sequenceOrder: 2,
+      status: 'published' as const,
+      contentData: {
+        title: 'Clarification step - The demonstration in one idea',
+        text:
+          'One idea to hold onto: this unit senses how the learning is going and quietly adjusts the next step.\n\nIf anything felt unclear, re-read the introduction with this single idea in mind: content stays the same, but the support around it adapts to you.',
+        note:
+          'This clarification restates the orientation in the simplest possible framing before you continue.',
+        journeyPlacementMode: 'after',
+        adaptiveTriggerLabel: 'confusion',
+      },
+    },
+    {
+      id: 'LC-M1-E1-TEXT-SUPPORT',
+      episodeId: 'M1-E1',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'frustration' as const,
+      scaffoldLevel: 4,
+      isEnrichment: false,
+      sequenceOrder: 3,
+      status: 'published' as const,
+      contentData: {
+        title: 'Support step - Take it one screen at a time',
+        text:
+          'There is no time pressure in this orientation. Break it into three tiny steps: read the introduction, skim the list of what you will see, and write one short sentence in the activity.\n\nEach step alone takes under a minute.',
+        note:
+          'This support step decomposes the orientation into smaller actions to lower pressure.',
+        journeyPlacementMode: 'after',
+        adaptiveTriggerLabel: 'frustration',
+      },
+    },
+    {
+      id: 'LC-M1-E1-ACTIVITY-REENGAGE',
+      episodeId: 'M1-E1',
+      contentType: 'ASSESSMENT' as const,
+      adaptiveTag: 'boredom_disengagement' as const,
+      scaffoldLevel: 3,
+      isEnrichment: false,
+      sequenceOrder: 3,
+      status: 'published' as const,
+      contentData: {
+        title: 'Engagement activity - One-line prediction',
+        question: 'Which kind of adaptive help do you expect to see most often?',
+        prompt:
+          'Pick the type of support you personally expect to encounter most during this demonstration, then continue.',
+        options: [
+          'A short clarification of an idea',
+          'A calmer, simplified support step',
+          'A quick re-engagement activity',
+          'An optional extra challenge',
+        ],
+        hint: 'There is no wrong answer - this is a quick prediction to restart active participation.',
+        journeyPlacementMode: 'before',
+        adaptiveTriggerLabel: 'boredom_disengagement',
+      },
+    },
+    {
+      id: 'LC-M1-E1-TEXT-CHALLENGE',
+      episodeId: 'M1-E1',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'high_engagement' as const,
+      scaffoldLevel: 2,
+      isEnrichment: true,
+      sequenceOrder: 4,
+      status: 'published' as const,
+      contentData: {
+        title: 'Challenge extension - Design your own trigger',
+        text:
+          'Optional challenge: imagine you are the instructional designer. Describe one situation in a lesson where you would deliberately NOT intervene, even if the learner shows a strong emotion, and explain why staying silent is the better teaching move.',
+        note:
+          'This enrichment step is offered because you are progressing quickly through the orientation.',
+        journeyPlacementMode: 'after',
+        adaptiveTriggerLabel: 'high_engagement',
+      },
+    },
+    {
+      id: 'LC-M1-E1-TEXT-REASSURE',
+      episodeId: 'M1-E1',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'test_anxiety' as const,
+      scaffoldLevel: 3,
+      isEnrichment: false,
+      sequenceOrder: 3,
+      status: 'published' as const,
+      contentData: {
+        title: 'Reassurance - This activity is not graded',
+        text:
+          'A quick reminder: the short activity in this lesson is not scored and has no wrong answers. It simply helps you set an expectation before the demonstration begins.\n\nWrite whatever comes to mind first and continue at your own pace.',
+        note:
+          'Neutral procedural reassurance for the orientation activity - no answer guidance is given.',
+        journeyPlacementMode: 'before',
+        adaptiveTriggerLabel: 'test_anxiety',
+      },
+    },
+    {
       id: 'LC-M1-E2-TEXT-OBJECTIVES',
       episodeId: 'M1-E2',
       contentType: 'TEXT' as const,
@@ -352,7 +453,7 @@ async function main() {
       episodeId: 'M1-E2',
       contentType: 'TEXT' as const,
       adaptiveTag: 'confusion' as const,
-      scaffoldLevel: 3,
+      scaffoldLevel: 4,
       isEnrichment: false,
       sequenceOrder: 5,
       status: 'published' as const,
@@ -374,7 +475,7 @@ async function main() {
       episodeId: 'M1-E2',
       contentType: 'VISUAL' as const,
       adaptiveTag: 'confusion' as const,
-      scaffoldLevel: 3,
+      scaffoldLevel: 4,
       isEnrichment: false,
       sequenceOrder: 5,
       status: 'published' as const,
@@ -399,7 +500,7 @@ async function main() {
       episodeId: 'M1-E2',
       contentType: 'VISUAL' as const,
       adaptiveTag: 'confusion' as const,
-      scaffoldLevel: 3,
+      scaffoldLevel: 4,
       isEnrichment: false,
       sequenceOrder: 5,
       status: 'published' as const,
@@ -424,7 +525,7 @@ async function main() {
       episodeId: 'M1-E2',
       contentType: 'VIDEO' as const,
       adaptiveTag: 'confusion' as const,
-      scaffoldLevel: 3,
+      scaffoldLevel: 4,
       isEnrichment: false,
       sequenceOrder: 5,
       status: 'published' as const,
@@ -536,7 +637,7 @@ async function main() {
       episodeId: 'M1-E2',
       contentType: 'ASSESSMENT' as const,
       adaptiveTag: 'boredom_disengagement' as const,
-      scaffoldLevel: 2,
+      scaffoldLevel: 3,
       isEnrichment: false,
       sequenceOrder: 7,
       status: 'published' as const,
@@ -576,6 +677,25 @@ async function main() {
           'This optional challenge demonstrates the enrichment path without interrupting the normal lesson sequence.',
         journeyPlacementMode: 'after',
         adaptiveTriggerLabel: 'high_engagement',
+      },
+    },
+    {
+      id: 'LC-M1-E2-TEXT-REASSURE',
+      episodeId: 'M1-E2',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'test_anxiety' as const,
+      scaffoldLevel: 3,
+      isEnrichment: false,
+      sequenceOrder: 9,
+      status: 'published' as const,
+      contentData: {
+        title: 'Reassurance - How the checkpoint works',
+        text:
+          'Before the checkpoint: it is short, it explains the answer afterwards, and a retry path exists if needed.\n\nRead each option calmly, and remember that the goal of this checkpoint is to confirm the main idea of the lesson - nothing more.',
+        note:
+          'Neutral procedural reassurance before the adaptive checkpoint - clarifies the procedure without hinting at the answer.',
+        journeyPlacementMode: 'before',
+        adaptiveTriggerLabel: 'test_anxiety',
       },
     },
     {
@@ -634,6 +754,106 @@ async function main() {
         hint:
           'Name the learning purpose of the next step rather than using internal authoring terms.',
         journeyPlacementMode: 'baseline',
+      },
+    },
+    {
+      id: 'LC-M1-E3-TEXT-CLARIFY',
+      episodeId: 'M1-E3',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'confusion' as const,
+      scaffoldLevel: 4,
+      isEnrichment: false,
+      sequenceOrder: 2,
+      status: 'published' as const,
+      contentData: {
+        title: 'Clarification step - The three outcomes in plain words',
+        text:
+          'Plain-words recap: after any checkpoint there are only three outcomes to explain. 1) Correct: the learner continues forward. 2) Incorrect: the learner sees why, then retries or reviews. 3) Support helps: a short extra step appears, then the learner returns to the same place.\n\nUse these three sentences as the skeleton of your explanation.',
+        note:
+          'This clarification reduces the interpretation task to a three-outcome template.',
+        journeyPlacementMode: 'after',
+        adaptiveTriggerLabel: 'confusion',
+      },
+    },
+    {
+      id: 'LC-M1-E3-TEXT-SUPPORT',
+      episodeId: 'M1-E3',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'frustration' as const,
+      scaffoldLevel: 4,
+      isEnrichment: false,
+      sequenceOrder: 3,
+      status: 'published' as const,
+      contentData: {
+        title: 'Support step - Answer one outcome at a time',
+        text:
+          'If the synthesis task feels heavy, split it: first write only what happens after a correct answer. Pause. Then write what happens after an incorrect answer. Pause. Finally add one line about the support step.\n\nThree short sentences are a complete answer.',
+        note:
+          'This support step decomposes the synthesis activity into three separate micro-answers.',
+        journeyPlacementMode: 'after',
+        adaptiveTriggerLabel: 'frustration',
+      },
+    },
+    {
+      id: 'LC-M1-E3-ACTIVITY-REENGAGE',
+      episodeId: 'M1-E3',
+      contentType: 'ASSESSMENT' as const,
+      adaptiveTag: 'boredom_disengagement' as const,
+      scaffoldLevel: 3,
+      isEnrichment: false,
+      sequenceOrder: 3,
+      status: 'published' as const,
+      contentData: {
+        title: 'Engagement activity - Quick scenario vote',
+        question: 'A learner failed the checkpoint twice and looks tense. What is the kindest useful next step?',
+        prompt: 'Choose the step you would offer this learner right now, then continue to the synthesis task.',
+        options: [
+          'Offer a calmer, smaller version of the task',
+          'Repeat the same question immediately',
+          'End the lesson early',
+          'Show the correct answer with no explanation',
+        ],
+        hint: 'Think about restoring the learner\'s sense of control first.',
+        journeyPlacementMode: 'before',
+        adaptiveTriggerLabel: 'boredom_disengagement',
+      },
+    },
+    {
+      id: 'LC-M1-E3-TEXT-CHALLENGE',
+      episodeId: 'M1-E3',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'high_engagement' as const,
+      scaffoldLevel: 2,
+      isEnrichment: true,
+      sequenceOrder: 4,
+      status: 'published' as const,
+      contentData: {
+        title: 'Challenge extension - Write the counter-case',
+        text:
+          'Optional challenge: describe one situation where adaptive support could actually harm learning - for example, interrupting productive struggle - and propose the rule you would add to prevent it.\n\nThis is the kind of trade-off instructional designers debate in real adaptive systems.',
+        note:
+          'Enrichment path for learners moving confidently through the closing lesson.',
+        journeyPlacementMode: 'after',
+        adaptiveTriggerLabel: 'high_engagement',
+      },
+    },
+    {
+      id: 'LC-M1-E3-TEXT-REASSURE',
+      episodeId: 'M1-E3',
+      contentType: 'TEXT' as const,
+      adaptiveTag: 'test_anxiety' as const,
+      scaffoldLevel: 3,
+      isEnrichment: false,
+      sequenceOrder: 3,
+      status: 'published' as const,
+      contentData: {
+        title: 'Reassurance - Your explanation cannot fail',
+        text:
+          'The synthesis activity is open-ended: any answer that names the learner need, the support offered, and how the learner returns to the lesson is a good answer.\n\nThere is no hidden rubric and no trick. Write it in your own words.',
+        note:
+          'Neutral reassurance for the open-ended synthesis task - procedural only, no content guidance.',
+        journeyPlacementMode: 'before',
+        adaptiveTriggerLabel: 'test_anxiety',
       },
     },
   ];
@@ -1121,6 +1341,7 @@ async function main() {
 
     for (const user of demoUsers) {
       const existing = await prisma.learner.findUnique({ where: { participantId: user.participantId } });
+      let learnerId = existing?.id;
       if (!existing) {
         const learner = await prisma.learner.create({
           data: {
@@ -1130,6 +1351,7 @@ async function main() {
             isActive: true,
           },
         });
+        learnerId = learner.id;
         const hash = await bcrypt.hash(user.password, 12);
         await prisma.authCredential.create({
           data: { learnerId: learner.id, passwordHash: hash },
@@ -1145,6 +1367,27 @@ async function main() {
           where: { id: existing.id },
           data: { isActive: true },
         });
+      }
+
+      // Consent is now granted at registration; backfill it for demo learners
+      // so their journey starts at profile setup rather than being stuck.
+      if (learnerId && user.role === 'learner') {
+        const hasConsent = await prisma.consentRecord.findFirst({
+          where: { learnerId, withdrawalRequestedAt: null },
+          select: { id: true },
+        });
+        if (!hasConsent) {
+          await prisma.consentRecord.create({
+            data: {
+              learnerId,
+              consentVersion: '2.0-registration',
+              participation: true,
+              performanceData: true,
+              behavioralTracking: true,
+              facialAnalysis: user.cohort === 'experimental',
+            },
+          });
+        }
       }
     }
   }

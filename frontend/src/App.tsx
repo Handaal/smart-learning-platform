@@ -31,7 +31,8 @@ const ResearchAdminHome = lazy(() => import('@/pages/researchAdmin/ResearchAdmin
 const ResearchDashboard = lazy(() => import('@/pages/research/ResearchDashboard'));
 const ParticipantView = lazy(() => import('@/pages/research/ParticipantView'));
 const LearnerEvalDashboard = lazy(() => import('@/pages/research/LearnerEvalDashboard'));
-const ContentControlHub = lazy(() => import('@/pages/admin/ContentControlHub'));
+const CourseUnitsPage = lazy(() => import('@/pages/admin/CourseUnitsPage'));
+const UnitLessonsPage = lazy(() => import('@/pages/admin/UnitLessonsPage'));
 const ResearchAdminHelpPage = lazy(() => import('@/pages/researchAdmin/ResearchAdminHelpPage'));
 const EmotionValidationPage = lazy(() => import('@/pages/researchAdmin/EmotionValidationPage'));
 const AdaptiveDisplayCriteriaPage = lazy(() => import('@/pages/researchAdmin/AdaptiveDisplayCriteriaPage'));
@@ -126,12 +127,7 @@ function resolveLearnerJourneyRedirect(stage: ReturnType<typeof useLearnerJourne
     return '/dashboard';
   }
 
-  if (stage === 'consent') {
-    if (onOnboarding || onHelp) return null;
-    return '/onboarding';
-  }
-
-  if (stage === 'setup' || stage === 'ready') {
+  if (stage === 'ready') {
     if (onOnboarding || onHelp) return null;
     return '/onboarding';
   }
@@ -183,26 +179,6 @@ function LearnerJourneyBoundary({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AssessmentEntryRedirect() {
-  const { stage, isLoading } = useLearnerJourney();
-  const { t } = useI18n();
-
-  if (isLoading) {
-    return (
-      <div className="loading-panel route-state route-state-sm">
-        {t('common.preparingAssessment')}
-      </div>
-    );
-  }
-
-  if (stage === 'pretest') return <Navigate to="/assessment/pre" replace />;
-  if (stage === 'posttest') return <Navigate to="/assessment/post" replace />;
-  if (stage === 'pending_approval') return <Navigate to="/dashboard" replace />;
-  if (stage === 'consent' || stage === 'setup' || stage === 'ready') return <Navigate to="/onboarding" replace />;
-  if (stage === 'completed') return <Navigate to="/completion" replace />;
-  return <Navigate to="/dashboard" replace />;
-}
-
 function RouteFallback() {
   const { t } = useI18n();
   return <div className="loading-panel route-state">{t('common.loading', 'Loading...')}</div>;
@@ -225,7 +201,6 @@ export default function App() {
         <Route path="/modules" element={<ModulesPage />} />
         <Route path="/session/:sessionId" element={<SessionPage />} />
         <Route path="/reflect/:sessionId" element={<ReflectionPage />} />
-        <Route path="/assessment" element={<AssessmentEntryRedirect />} />
         <Route path="/assessment/:form" element={<AssessmentPage />} />
         <Route path="/completion" element={<FinalCompletionPage />} />
         <Route path="/pm-tools" element={<PMToolsPage />} />
@@ -236,7 +211,8 @@ export default function App() {
 
       <Route element={<AppErrorBoundary><RequireResearchAdmin><AppLayout /></RequireResearchAdmin></AppErrorBoundary>}>
         <Route path="/research-admin" element={<ResearchAdminHome />} />
-        <Route path="/research-admin/course" element={<ContentControlHub />} />
+        <Route path="/research-admin/course" element={<CourseUnitsPage />} />
+        <Route path="/research-admin/course/units/:unitId" element={<UnitLessonsPage />} />
         <Route path="/research-admin/access" element={<ResearchAdminUserManagementPage />} />
         <Route path="/research-admin/reports" element={<ResearchDashboard />} />
         <Route path="/research-admin/emotion-validation" element={<EmotionValidationPage />} />
@@ -249,7 +225,7 @@ export default function App() {
         <Route path="/research/:participantId" element={<ParticipantView />} />
         <Route path="/research/:participantId/eval" element={<LearnerEvalDashboard />} />
         <Route path="/admin" element={<Navigate to="/research-admin" replace />} />
-        <Route path="/admin/content" element={<ContentControlHub />} />
+        <Route path="/admin/content" element={<Navigate to="/research-admin/course" replace />} />
         <Route path="/admin/verify" element={<Navigate to="/research-admin" replace />} />
       </Route>
 

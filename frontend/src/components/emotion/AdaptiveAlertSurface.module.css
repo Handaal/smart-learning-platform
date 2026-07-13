@@ -1,9 +1,14 @@
 .surface {
-  border: 1px solid rgba(27, 89, 124, 0.14);
-  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
+  border: 1px solid rgba(27, 89, 124, 0.22);
+  /* Opaque base + subtle darkening overlay so the card reads clearly when it
+     overlays the lesson content (the raw surface token is slightly translucent). */
+  background-color: var(--color-surface);
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.07));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 24px;
   padding: 1.1rem 1.2rem;
-  box-shadow: 0 18px 40px rgba(54, 46, 31, 0.08);
+  box-shadow: 0 22px 50px rgba(20, 16, 8, 0.26);
   color: var(--color-text);
 }
 
@@ -34,6 +39,19 @@
   margin: 0.55rem 0 0;
   line-height: 1.8;
   color: var(--color-text-2);
+}
+
+.contentTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .meta {
@@ -117,22 +135,21 @@
 }
 
 .advancedPath {
-  background: linear-gradient(135deg, rgba(12, 104, 111, 0.12), var(--color-surface));
+  background-image: linear-gradient(135deg, rgba(12, 104, 111, 0.18), rgba(0, 0, 0, 0.07));
 }
 
 .informationWindow {
-  border-color: rgba(55, 118, 182, 0.18);
-  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
+  border-color: rgba(55, 118, 182, 0.28);
+  background-image: linear-gradient(180deg, rgba(55, 118, 182, 0.14), rgba(0, 0, 0, 0.07));
 }
 
 .standardPath {
   box-shadow: none;
-  background: var(--color-surface);
 }
 
 .operationalSafetyProtocol {
-  border-color: rgba(121, 102, 34, 0.24);
-  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
+  border-color: rgba(121, 102, 34, 0.34);
+  background-image: linear-gradient(180deg, rgba(121, 102, 34, 0.16), rgba(0, 0, 0, 0.07));
 }
 
 @media (max-width: 760px) {

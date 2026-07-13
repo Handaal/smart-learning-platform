@@ -562,3 +562,70 @@
     align-items: flex-start;
   }
 }
+
+/* Per-emotion adaptive surface docking — the single suggestion surface takes a
+   different shape + screen position depending on the emotion result's uiShape. */
+.adaptiveDock {
+  position: fixed;
+  z-index: 120;
+  width: min(420px, calc(100vw - 32px));
+  max-height: 82vh;
+  overflow: auto;
+}
+
+.dock_side_panel {
+  inset-inline-end: 20px;
+  top: 96px;
+}
+
+.dock_information_window {
+  inset-inline-end: 20px;
+  top: 88px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.dock_advanced_path {
+  inset-inline-end: 20px;
+  bottom: 96px;
+}
+
+.dock_mini_task_strip {
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  bottom: 88px;
+  width: min(680px, calc(100vw - 32px));
+}
+
+.dock_popup_card {
+  inset-inline-start: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+}
+
+.dock_operational_safety_protocol {
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  top: 12px;
+  width: min(680px, calc(100vw - 32px));
+}
+
+.dock_standard_path {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .adaptiveDock,
+  .dock_side_panel,
+  .dock_information_window,
+  .dock_advanced_path,
+  .dock_mini_task_strip,
+  .dock_popup_card,
+  .dock_operational_safety_protocol {
+    inset-inline: 12px;
+    transform: none;
+    width: auto;
+    top: auto;
+    bottom: 16px;
+  }
+}

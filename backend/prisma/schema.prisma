@@ -135,7 +135,7 @@ enum PublishStatus {
 
 model Learner {
   id            String    @id @default(uuid())
-  participantId String    @unique @map("participant_id") @db.VarChar(20)
+  participantId String    @unique @map("participant_id") @db.VarChar(32)
   cohort        CohortType
   role          AccountRole @default(learner)
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -287,6 +287,8 @@ model Episode {
   sequenceOrder               Int         @map("sequence_order")
   baseScaffold                Int         @default(3) @map("base_scaffold")
   expectedDurationMin         Int?        @map("expected_duration_min")
+  generalObjective            String?     @map("general_objective")
+  teacherGuidance             String?     @map("teacher_guidance")
   emotionalTriggerExpected    AffectState? @map("emotional_trigger_expected")
   isAdaptive                  Boolean      @default(true) @map("is_adaptive")
   lessonType                  String       @default("guided") @map("lesson_type")
@@ -805,7 +807,7 @@ model ScenarioActionConfig {
 
 model EngagementSnapshotRecord {
   id                String   @id @default(uuid())
-  participantId     String   @map("participant_id") @db.VarChar(20)
+  participantId     String   @map("participant_id") @db.VarChar(32)
   sessionId         String   @map("session_id")
   moduleId          String?  @map("module_id")
   lessonId          String?  @map("lesson_id")
@@ -826,7 +828,7 @@ model EngagementSnapshotRecord {
 
 model InterventionLogRecord {
   id                     String   @id @default(uuid())
-  participantId          String   @map("participant_id") @db.VarChar(20)
+  participantId          String   @map("participant_id") @db.VarChar(32)
   sessionId              String   @map("session_id")
   moduleId               String?  @map("module_id")
   lessonId               String?  @map("lesson_id")
@@ -848,7 +850,7 @@ model InterventionLogRecord {
 
 model ActivityLogRecord {
   id            String   @id @default(uuid())
-  participantId String   @map("participant_id") @db.VarChar(20)
+  participantId String   @map("participant_id") @db.VarChar(32)
   sessionId     String   @map("session_id")
   moduleId      String?  @map("module_id")
   lessonId      String?  @map("lesson_id")
@@ -867,7 +869,7 @@ model ActivityLogRecord {
 model AssessmentAttemptRecord {
   id             String   @id @default(uuid())
   assessmentId   String   @map("assessment_id")
-  participantId  String   @map("participant_id") @db.VarChar(20)
+  participantId  String   @map("participant_id") @db.VarChar(32)
   sessionId      String?  @map("session_id")
   attemptIndex   Int      @default(1) @map("attempt_index")
   startedAt      DateTime @default(now()) @map("started_at")
@@ -896,7 +898,7 @@ model BadgeDefinition {
 
 model TimelineHeatmapRecord {
   id                String   @id @default(uuid())
-  participantId     String   @map("participant_id") @db.VarChar(20)
+  participantId     String   @map("participant_id") @db.VarChar(32)
   sessionId         String   @map("session_id")
   moduleId          String?  @map("module_id")
   lessonId          String?  @map("lesson_id")
@@ -916,7 +918,7 @@ model TimelineHeatmapRecord {
 
 model AdminSimulationRecord {
   id                String   @id @default(uuid())
-  participantId     String?  @map("participant_id") @db.VarChar(20)
+  participantId     String?  @map("participant_id") @db.VarChar(32)
   sessionId         String?  @map("session_id")
   lessonId          String?  @map("lesson_id")
   activityId        String?  @map("activity_id")
@@ -934,7 +936,7 @@ model AdminSimulationRecord {
 
 model ResearchExportRecord {
   id           String   @id @default(uuid())
-  participantId String? @map("participant_id") @db.VarChar(20)
+  participantId String? @map("participant_id") @db.VarChar(32)
   sessionId    String?  @map("session_id")
   exportType   String   @map("export_type")
   exportFormat String   @map("export_format")

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Camera, FlaskConical, ShieldCheck } from 'lucide-react';
 import { authApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './LoginPage.module.css';
+
+const PARTICIPANT_ID_PATTERN = /^[A-Za-z0-9]{3,32}$/;
 
 export default function RegisterPage() {
   const [pid, setPid] = useState('');
@@ -11,9 +13,10 @@ export default function RegisterPage() {
   const [createdId, setCreatedId] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
   const { t } = useI18n();
 
-  async function handleSubmit(event: React.FormEvent) {
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!pass) {
       setErr(t('auth.register.errors.required'));
@@ -23,7 +26,18 @@ export default function RegisterPage() {
       setErr(t('auth.register.errors.shortPassword'));
       return;
     }
+    const trimmedPid = pid.trim();
+    if (trimmedPid && !PARTICIPANT_ID_PATTERN.test(trimmedPid.replace(/[^A-Za-z0-9]/g, ''))) {
+      setErr(t('auth.register.errors.invalidParticipantId'));
+      return;
+    }
 
+    setErr('');
+    setConsentOpen(true);
+  }
+
+  async function handleConsentApprove() {
+    setConsentOpen(false);
     setBusy(true);
     setErr('');
     try {
@@ -32,6 +46,7 @@ export default function RegisterPage() {
         password: pass,
         cohort,
         role: 'learner',
+        consentAccepted: true,
       })) as { data: { participantId: string } };
       setCreatedId(response.data.participantId);
     } catch (error: any) {
@@ -39,6 +54,11 @@ export default function RegisterPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleConsentDecline() {
+    setConsentOpen(false);
+    setErr(t('auth.register.consent.declinedNote'));
   }
 
   return (
@@ -123,6 +143,45 @@ export default function RegisterPage() {
         <a href="/login">{t('auth.register.signIn')}</a>
         {createdId ? ` ${t('auth.register.generatedIdLoginHint')}` : ''}
       </p>
+
+      {consentOpen && (
+        <div className={styles.consentOverlay} role="presentation">
+          <div
+            className={styles.consentDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="consent-title"
+          >
+            <h3 id="consent-title" className={styles.consentTitle}>
+              <ShieldCheck size={20} />
+              {t('auth.register.consent.title')}
+            </h3>
+            <p className={styles.consentIntro}>{t('auth.register.consent.intro')}</p>
+            <ul className={styles.consentList}>
+              <li>
+                <FlaskConical size={16} />
+                <span>{t('auth.register.consent.pointResearch')}</span>
+              </li>
+              <li>
+                <Camera size={16} />
+                <span>{t('auth.register.consent.pointCamera')}</span>
+              </li>
+              <li>
+                <ShieldCheck size={16} />
+                <span>{t('auth.register.consent.pointAnonymity')}</span>
+              </li>
+            </ul>
+            <div className={styles.consentActions}>
+              <button type="button" className="btn btn-secondary" onClick={handleConsentDecline}>
+                {t('auth.register.consent.decline')}
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleConsentApprove}>
+                {t('auth.register.consent.approve')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

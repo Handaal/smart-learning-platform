@@ -145,6 +145,18 @@ export default function ResearchDashboard() {
   });
 
   const gainQuery = useQuery({ queryKey: ['research', 'gain'], queryFn: researchApi.competencyGain, enabled: !USE_MOCK });
+  const preResultsQuery = useQuery({
+    queryKey: ['research', 'assessmentResults', 'pre'],
+    queryFn: () => researchApi.assessmentResults('pre'),
+    enabled: !USE_MOCK,
+  });
+  const postResultsQuery = useQuery({
+    queryKey: ['research', 'assessmentResults', 'post'],
+    queryFn: () => researchApi.assessmentResults('post'),
+    enabled: !USE_MOCK,
+  });
+  const preResults = ((preResultsQuery.data as any)?.data ?? []) as any[];
+  const postResults = ((postResultsQuery.data as any)?.data ?? []) as any[];
   const engagementQuery = useQuery({ queryKey: ['research', 'engagement'], queryFn: researchApi.engagement, enabled: !USE_MOCK });
   const effectivenessQuery = useQuery({ queryKey: ['research', 'effectiveness'], queryFn: researchApi.adaptiveEffectiveness, enabled: !USE_MOCK });
   const responseTypeQuery = useQuery({ queryKey: ['research', 'response-types'], queryFn: researchApi.responseTypeDistribution, enabled: !USE_MOCK });
@@ -1052,6 +1064,89 @@ export default function ResearchDashboard() {
                 )
               )}
             </article>
+          </div>
+          <div className={styles.dualGrid}>
+            {([
+              {
+                form: 'pre' as const,
+                rows: preResults,
+                title: ui('pretestResultsTitle', 'Pre-test results (الاختبار القبلي)'),
+                lead: ui('pretestResultsLead', 'Every learner who completed the pre-test, with dimension and total scores.'),
+                emptyTitle: 'research.dashboard.empty.pretestResultsTitle',
+                emptyTitleFallback: 'No pre-test submissions yet.',
+                emptyBody: 'research.dashboard.empty.pretestResultsBody',
+                emptyBodyFallback: 'Results appear here as soon as learners complete the pre-test.',
+              },
+              {
+                form: 'post' as const,
+                rows: postResults,
+                title: ui('posttestResultsTitle', 'Post-test results (الاختبار البعدي)'),
+                lead: ui('posttestResultsLead', 'Every learner who completed the post-test, with dimension and total scores.'),
+                emptyTitle: 'research.dashboard.empty.posttestResultsTitle',
+                emptyTitleFallback: 'No post-test submissions yet.',
+                emptyBody: 'research.dashboard.empty.posttestResultsBody',
+                emptyBodyFallback: 'Results appear here as soon as learners complete the post-test.',
+              },
+            ]).map((panel) => (
+              <article key={panel.form} className={styles.reportCard}>
+                <div className={styles.panelHead}>
+                  <div>
+                    <h3>{panel.title}</h3>
+                    <p className={styles.cardLead}>{panel.lead}</p>
+                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() =>
+                      void handleServerExport(`assessment-${panel.form}`, () =>
+                        researchApi.exportAssessmentResults(panel.form),
+                      )
+                    }
+                    disabled={exporting !== null || panel.rows.length === 0}
+                  >
+                    <Download size={13} />
+                    {ui('exportExcel', 'Export Excel')}
+                  </button>
+                </div>
+                {panel.rows.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>{ui('thParticipant', 'Participant')}</th>
+                          <th>{ui('thCohort', 'Cohort')}</th>
+                          <th>{ui('thScore', 'Score')}</th>
+                          <th>{ui('thCorrect', 'Correct')}</th>
+                          <th>{ui('thSubmitted', 'Submitted')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {panel.rows.slice(0, 18).map((row: any) => (
+                          <tr
+                            key={row.assessmentId}
+                            className={styles.clickRow}
+                            onClick={() => navigate(`/research-admin/participants/${row.participantId}`)}
+                          >
+                            <td>{row.participantId}</td>
+                            <td>
+                              <span className={`badge ${row.cohort === 'experimental' ? 'badge-teal' : 'badge-muted'}`}>
+                                {cohortLabel(row.cohort)}
+                              </span>
+                            </td>
+                            <td>{row.totalScore === null || row.totalScore === undefined ? '--' : `${Math.round(Number(row.totalScore))}%`}</td>
+                            <td>
+                              {row.correctCount ?? '--'}/{row.questionCount ?? '--'}
+                            </td>
+                            <td>{row.submittedAt ? fmtTime(row.submittedAt) : '--'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  renderEmptyPanel(panel.emptyTitle, panel.emptyTitleFallback, panel.emptyBody, panel.emptyBodyFallback)
+                )}
+              </article>
+            ))}
           </div>
         </section>
 

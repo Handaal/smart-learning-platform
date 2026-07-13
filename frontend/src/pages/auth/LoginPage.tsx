@@ -16,27 +16,6 @@ export default function LoginPage() {
   const setUser = useAuthStore((state) => state.setUser);
   const navigate = useNavigate();
 
-  const demoAccounts = [
-    {
-      label: t('auth.login.experimentalDemo.label'),
-      participantId: 'EXP00000000000000001',
-      password: 'research2026',
-      description: t('auth.login.experimentalDemo.description'),
-    },
-    {
-      label: t('auth.login.controlDemo.label'),
-      participantId: 'CTL00000000000000001',
-      password: 'research2026',
-      description: t('auth.login.controlDemo.description'),
-    },
-    {
-      label: t('auth.login.researchDemo.label'),
-      participantId: 'RADMIN00000000000001',
-      password: 'research2026',
-      description: t('auth.login.researchDemo.description'),
-    },
-  ];
-
   async function submitLogin() {
     if (busy) return;
     if (!pid || !pass) {
@@ -89,36 +68,6 @@ export default function LoginPage() {
     <div>
       <h2 className={styles.heading}>{t('auth.login.title')}</h2>
       <p className={styles.sub}>{t('auth.login.subtitle')}</p>
-
-      <details className={styles.demoPanel}>
-        <summary className={styles.demoHeader}>
-          <strong>{t('auth.login.demoTitle')}</strong>
-          <span>{t('auth.login.demoSubtitle')}</span>
-        </summary>
-        <div className={styles.demoList}>
-          {demoAccounts.map((account) => (
-            <button
-              key={account.label}
-              type="button"
-              className={styles.demoCard}
-              onClick={() => {
-                setPid(account.participantId);
-                setPass(account.password);
-                setErr('');
-              }}
-            >
-              <div>
-                <strong>{account.label}</strong>
-                <p>{account.description}</p>
-              </div>
-              <div className={styles.demoMeta}>
-                <span>{account.participantId}</span>
-                <span>{account.password}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </details>
 
       <form onSubmit={handleSubmit} className={styles.form} noValidate>
         <div className="form-group">

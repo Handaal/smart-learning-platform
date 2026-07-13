@@ -61,6 +61,14 @@ function asString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+// Optional free-text lesson field: undefined = leave unchanged, '' → null, else trimmed string.
+function parseOptionalText(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed ? trimmed : null;
+}
+
 function parseOutlineUnits(value: unknown): OutlineUnit[] {
   if (!Array.isArray(value)) return [];
 
@@ -117,6 +125,8 @@ export async function listModules(req: Request, res: Response, next: NextFunctio
             objectives: true,
             sequenceOrder: true,
             expectedDurationMin: true,
+            generalObjective: true,
+            teacherGuidance: true,
             emotionalTriggerExpected: true,
             lessonType: true,
             status: true,
@@ -432,6 +442,8 @@ export async function createEpisode(req: Request, res: Response, next: NextFunct
       sequenceOrder,
       baseScaffold,
       expectedDurationMin,
+      generalObjective,
+      teacherGuidance,
       emotionalTriggerExpected,
       lessonType,
       status,
@@ -453,6 +465,8 @@ export async function createEpisode(req: Request, res: Response, next: NextFunct
           sequenceOrder: sequenceOrder || 0,
           baseScaffold,
           expectedDurationMin,
+          generalObjective: parseOptionalText(generalObjective) ?? null,
+          teacherGuidance: parseOptionalText(teacherGuidance) ?? null,
           emotionalTriggerExpected: parseExpectedAffect(emotionalTriggerExpected),
           lessonType: typeof lessonType === 'string' && lessonType.trim() ? lessonType.trim() : 'guided',
           status: parsedStatus,
@@ -497,6 +511,8 @@ export async function updateEpisode(req: Request, res: Response, next: NextFunct
       sequenceOrder,
       baseScaffold,
       expectedDurationMin,
+      generalObjective,
+      teacherGuidance,
       emotionalTriggerExpected,
       lessonType,
       status,
@@ -522,6 +538,8 @@ export async function updateEpisode(req: Request, res: Response, next: NextFunct
           sequenceOrder,
           baseScaffold,
           expectedDurationMin,
+          generalObjective: parseOptionalText(generalObjective),
+          teacherGuidance: parseOptionalText(teacherGuidance),
           emotionalTriggerExpected: parseExpectedAffect(emotionalTriggerExpected),
           lessonType: lessonType ? String(lessonType).trim() : undefined,
           status: parsedStatus,

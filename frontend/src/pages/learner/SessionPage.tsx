@@ -556,6 +556,7 @@ export default function SessionPage() {
   const [currentStepState, setCurrentStepState] = useState<LearnerStepRuntimeState | null>(null);
   const [selectedAdaptiveElementId, setSelectedAdaptiveElementId] = useState<string | null>(null);
   const [requestedAdaptiveElementId, setRequestedAdaptiveElementId] = useState<string | null>(null);
+  const [suggestedContentTitle, setSuggestedContentTitle] = useState<string | null>(null);
   const [dismissedNoticeKeys, setDismissedNoticeKeys] = useState<Record<string, true>>({});
   const [adaptiveEventCount, setAdaptiveEventCount] = useState(0);
   const [stepReadyCueVisible, setStepReadyCueVisible] = useState(false);
@@ -807,6 +808,7 @@ export default function SessionPage() {
     setSelectedAdaptiveElementId(null);
     setRequestedAdaptiveElementId(null);
     setPendingAdaptiveAlert(null);
+    setSuggestedContentTitle(null);
   }, [lesson?.id]);
 
   useEffect(() => {
@@ -919,7 +921,12 @@ export default function SessionPage() {
     let cancelled = false;
 
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'user', width: 320 } })
+      // 320px was too low for reliable MediaPipe face-landmark detection at a normal
+      // webcam distance (most frames came back no_face_low_confidence). Request a
+      // higher resolution so the face mesh has enough detail to lock on.
+      .getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      })
       .then((stream) => {
         if (cancelled || !videoRef.current) {
           stream.getTracks().forEach((track) => track.stop());
@@ -938,8 +945,19 @@ export default function SessionPage() {
         };
         tracker.onIntervention = (decision) => {
           if (!adaptiveExperienceEnabled) return;
-          setPendingAdaptiveAlert(decision);
+          // The fast AdaptiveEngine still drives scaffold changes + research logging,
+          // but the visible surface is now unified onto the per-result suggestion below.
           if (decision.scaffoldTo) setScaffoldLevel(decision.scaffoldTo);
+        };
+        tracker.onSuggestion = (suggestion) => {
+          if (!adaptiveExperienceEnabled) return;
+          // Per-result (~15s) suggestion IS the single adaptive surface. It carries a
+          // scenarioKey/uiShape/intervention/contentId, so the store sanitizes it into a
+          // full payload and the existing surface + content-insertion machinery reuse it.
+          setPendingAdaptiveAlert(suggestion as never);
+          setSuggestedContentTitle(
+            (suggestion as { contentTitle?: string | null }).contentTitle ?? null,
+          );
         };
         tracker.onDiagnostics = (snapshot) => {
           setEmotionDiagnostics(snapshot);
@@ -1385,21 +1403,28 @@ export default function SessionPage() {
           </section>
 
           {showAdaptiveAlertSurface && pendingAdaptiveAlert ? (
-            <AdaptiveAlertSurface
-              alert={pendingAdaptiveAlert}
-              choices={adaptiveChoices}
-              onSelectChoice={adaptiveChoices.length ? handleAdaptiveChoiceSelection : undefined}
-              onPrimaryAction={
-                adaptiveChoices.length
-                  ? undefined
-                  : adaptiveSupportAvailable &&
-                      pendingScenarioKey !== 'test_anxiety' &&
-                      pendingScenarioKey !== 'no_face_low_confidence'
-                    ? () => openSupportStep()
-                    : undefined
-              }
-              onDismissed={dismissAdaptiveNoticeForCurrentStep}
-            />
+            <div
+              className={`${styles.adaptiveDock} ${
+                styles[`dock_${pendingAdaptiveAlert.uiShape}`] ?? ''
+              }`}
+            >
+              <AdaptiveAlertSurface
+                alert={pendingAdaptiveAlert}
+                contentTitle={suggestedContentTitle}
+                choices={adaptiveChoices}
+                onSelectChoice={adaptiveChoices.length ? handleAdaptiveChoiceSelection : undefined}
+                onPrimaryAction={
+                  adaptiveChoices.length
+                    ? undefined
+                    : adaptiveSupportAvailable &&
+                        pendingScenarioKey !== 'test_anxiety' &&
+                        pendingScenarioKey !== 'no_face_low_confidence'
+                      ? () => openSupportStep()
+                      : undefined
+                }
+                onDismissed={dismissAdaptiveNoticeForCurrentStep}
+              />
+            </div>
           ) : null}
 
           <div className={styles.stepStatusBar}>

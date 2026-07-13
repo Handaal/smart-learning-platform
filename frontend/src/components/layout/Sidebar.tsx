@@ -1,6 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  BarChart3,
   BookOpen,
   Camera,
   ChevronRight,
@@ -30,7 +29,6 @@ const LEARNER_NAV: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, key: 'layout.sidebar.nav.dashboard', label: 'Dashboard' },
   { to: '/modules', icon: BookOpen, key: 'layout.sidebar.nav.modules', label: 'Modules' },
   { to: '/pm-tools', icon: Wrench, key: 'layout.sidebar.nav.pmTools', label: 'PM Tools' },
-  { to: '/assessment', icon: BarChart3, key: 'layout.sidebar.nav.assessment', label: 'Assessment' },
   { to: '/help', icon: CircleHelp, key: 'layout.sidebar.nav.help', label: 'Help Guide' },
 ];
 

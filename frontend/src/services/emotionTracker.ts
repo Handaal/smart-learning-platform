@@ -225,6 +225,7 @@ export class EmotionTracker {
 
   public onStateUpdate?: (state: any) => void;
   public onIntervention?: (decision: any) => void;
+  public onSuggestion?: (suggestion: any) => void;
   public onLocalFrame?: (frame: EmotionTrackerLocalFrame) => void;
   public onDiagnostics?: (diagnostics: EmotionTrackerDiagnostics) => void;
   public onError?: (message: string) => void;
@@ -367,6 +368,7 @@ export class EmotionTracker {
     });
 
     this.socket.on('adaptation', (decision) => this.onIntervention?.(decision));
+    this.socket.on('content_suggestion', (suggestion) => this.onSuggestion?.(suggestion));
   }
 
   async initialize(videoElement: HTMLVideoElement) {

@@ -1,0 +1,74 @@
+.card {
+  border: 1px solid rgba(27, 89, 124, 0.18);
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
+  border-radius: 20px;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 18px 40px rgba(54, 46, 31, 0.1);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.55rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.dominantLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  color: var(--color-accent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.emotion_confusion { color: #b45309; }
+.emotion_frustration { color: #b91c1c; }
+.emotion_boredom_disengagement { color: #6d28d9; }
+.emotion_high_engagement { color: #047857; }
+.emotion_test_anxiety { color: #be185d; }
+.emotion_neutral { color: var(--color-text-2); }
+
+.body {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--color-text-2);
+  font-size: 0.9rem;
+}
+
+.contentTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--color-accent-blue, var(--color-accent));
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.4rem 0.7rem;
+  width: fit-content;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

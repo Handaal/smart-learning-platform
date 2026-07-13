@@ -32,7 +32,12 @@ async function request<T>(
     throw new ApiError(res.status, body.error ?? 'Request failed', body.code);
   }
 
-  return res.json() as Promise<T>;
+  // 204 No Content (e.g. DELETE endpoints) and empty bodies have no JSON to parse —
+  // calling res.json() on them throws, which would reject the promise *after* the
+  // server already succeeded and skip any post-mutation cache refresh.
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 async function requestBlob(path: string, options: RequestInit = {}): Promise<Blob> {
@@ -212,6 +217,7 @@ export const researchApi = {
   contentEngagement:        () => get('/research/content-engagement'),
   assessmentLatency:        () => get('/research/assessment-latency'),
   timelineHeatmap:          (params?: string) => get(`/research/timeline-heatmap${params ? '?' + params : ''}`),
+  assessmentResults:        (form: 'pre' | 'post') => get(`/research/assessment-results?form=${form}`),
   participantSummary:       (pid: string) => get(`/research/participant/${pid}`),
   logAdminSimulation:       (body: object) => post('/research/admin-simulations', body),
   exportSessions:           () => downloadBlob('/research/export/sessions', 'step_sessions.csv'),
@@ -220,6 +226,11 @@ export const researchApi = {
   exportEmotionEvents:      () => downloadBlob('/research/export/emotion-events', 'step_emotion_events.csv'),
   exportTimelineHeatmap:    (params?: string) => downloadBlob(`/research/export/timeline-heatmap${params ? `?${params}` : ''}`, 'step_timeline_heatmap.csv'),
   exportMergedAnalytics:    () => downloadBlob('/research/export/merged-ml-dataset', 'step_merged_ml_dataset.csv'),
+  exportAssessmentResults:  (form: 'pre' | 'post') =>
+    downloadBlob(
+      `/research/export/assessment-results?form=${form}`,
+      form === 'pre' ? 'step_pretest_results.xlsx' : 'step_posttest_results.xlsx',
+    ),
 };
 
 export { ApiError };

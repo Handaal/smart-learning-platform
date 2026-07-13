@@ -6,6 +6,7 @@ import { prisma } from '../../lib/prisma';
 import { redis } from '../../lib/redis';
 import { AdaptiveEngine } from '../../services/AdaptiveEngine';
 import { AffectClassifier } from '../../services/AffectClassifier';
+import { maybeBuildEmotionSuggestion } from '../../services/EmotionSuggestionService';
 import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
 import { EMOTION_CONFIDENCE_THRESHOLD } from '../../policy/adaptive-alerts-policy';
 import { logger } from '../../lib/logger';
@@ -651,6 +652,19 @@ export function setupSocketIO(httpServer: HttpServer) {
 
         if (decision.intervention !== 'do_nothing') {
           socket.emit('adaptation', decision);
+        }
+
+        // Per-result (~15s) emotion suggestion layer: the unified adaptive
+        // surface on the learner. Separate Redis cooldown from the fast alerts.
+        const suggestion = await maybeBuildEmotionSuggestion({
+          sessionId: bw.sessionId,
+          learnerId,
+          episodeId: bw.episodeId ?? session?.episodeId ?? null,
+          emotionTrackingEnabled: access.emotionTrackingEnabled,
+        });
+        if (suggestion) {
+          socket.emit('content_suggestion', suggestion);
+          io.to(`researcher_learner_${learnerId}`).emit('content_suggestion', suggestion);
         }
       } catch (error) {
         logger.error('behavior_window handling error', error);

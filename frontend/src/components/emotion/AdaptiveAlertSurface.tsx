@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   AlertCircle,
   ArrowRight,
+  BookOpenCheck,
   CheckCircle2,
   Lightbulb,
   ShieldCheck,
@@ -23,6 +24,7 @@ type Choice = {
 
 type Props = {
   alert: AdaptivePayload;
+  contentTitle?: string | null;
   choices?: Choice[];
   onSelectChoice?: (choiceKey: string) => void;
   onPrimaryAction?: () => void;
@@ -51,6 +53,7 @@ const SURFACE_CLASS: Record<AdaptivePayload['uiShape'], string> = {
 
 export default function AdaptiveAlertSurface({
   alert,
+  contentTitle,
   choices = [],
   onSelectChoice,
   onPrimaryAction,
@@ -79,6 +82,12 @@ export default function AdaptiveAlertSurface({
           </span>
           <h3 className={styles.title}>{scenario.learnerTitle[locale]}</h3>
           <p className={styles.message}>{scenario.learnerMessage[locale]}</p>
+          {contentTitle ? (
+            <span className={styles.contentTitle}>
+              <BookOpenCheck size={14} />
+              {contentTitle}
+            </span>
+          ) : null}
         </div>
         {scenario.allowsDismiss && onDismissed ? (
           <button

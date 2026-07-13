@@ -15,6 +15,7 @@ import styles from './DashboardPage.module.css';
 export default function DashboardPage() {
   const learnerId = useAuthStore((state) => state.learnerId)!;
   const isActive = useAuthStore((state) => state.isActive);
+  const cohort = useAuthStore((state) => state.cohort);
   const groupLabel = useAuthStore((state) => state.groupLabel);
   const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
   const navigate = useNavigate();
@@ -142,6 +143,13 @@ export default function DashboardPage() {
     return t('learner.dashboard.support.default', 'Adaptive support is available based on your recent learning state.');
   }
 
+  const cohortGroupLabel =
+    cohort === 'experimental'
+      ? t('learner.dashboard.pending.groupExperimental', 'Experimental group')
+      : cohort === 'control'
+        ? t('learner.dashboard.pending.groupControl', 'Control group')
+        : groupLabel ?? '--';
+
   if (isActive === false) {
     return (
       <div className={styles.page}>
@@ -163,10 +171,15 @@ export default function DashboardPage() {
               <h2>{t('learner.dashboard.pending.statusTitle', 'Current access status')}</h2>
             </div>
             <p className={styles.resumeText}>
-              {t('learner.dashboard.pending.group', 'Assigned group')}: <strong>{groupLabel ?? '--'}</strong>
+              {t('learner.dashboard.pending.group', 'Assigned group')}: <strong>{cohortGroupLabel}</strong>
             </p>
             <p className={styles.resumeText}>
-              {t('learner.dashboard.pending.tracker', 'Emotion tracker access')}: <strong>{emotionTrackingEnabled ? 'Enabled' : 'Disabled'}</strong>
+              {t('learner.dashboard.pending.tracker', 'Emotion tracker access')}:{' '}
+              <strong>
+                {emotionTrackingEnabled
+                  ? t('learner.dashboard.pending.trackerEnabled', 'Enabled')
+                  : t('learner.dashboard.pending.trackerDisabled', 'Disabled')}
+              </strong>
             </p>
             <p className={styles.resumeText}>
               {t(
