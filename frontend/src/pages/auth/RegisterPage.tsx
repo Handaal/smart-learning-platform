@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CheckCircle2, Camera, FlaskConical, ShieldCheck } from 'lucide-react';
-import { authApi } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
+import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import { authApi, settingsApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './LoginPage.module.css';
 
@@ -15,6 +16,17 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const { t } = useI18n();
+
+  const consentQuery = useQuery({
+    queryKey: ['registration-consent'],
+    queryFn: () => settingsApi.getConsent(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const consent = consentQuery.data?.data;
+  const consentBodyParagraphs = (consent?.body ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -58,7 +70,7 @@ export default function RegisterPage() {
 
   function handleConsentDecline() {
     setConsentOpen(false);
-    setErr(t('auth.register.consent.declinedNote'));
+    setErr(consent?.declineNote ?? t('auth.register.consent.declinedNote'));
   }
 
   return (
@@ -154,22 +166,23 @@ export default function RegisterPage() {
           >
             <h3 id="consent-title" className={styles.consentTitle}>
               <ShieldCheck size={20} />
-              {t('auth.register.consent.title')}
+              {consent?.title ?? t('auth.register.consent.title')}
             </h3>
-            <p className={styles.consentIntro}>{t('auth.register.consent.intro')}</p>
+            <p className={styles.consentIntro}>{consent?.intro ?? t('auth.register.consent.intro')}</p>
             <ul className={styles.consentList}>
-              <li>
-                <FlaskConical size={16} />
-                <span>{t('auth.register.consent.pointResearch')}</span>
-              </li>
-              <li>
-                <Camera size={16} />
-                <span>{t('auth.register.consent.pointCamera')}</span>
-              </li>
-              <li>
-                <ShieldCheck size={16} />
-                <span>{t('auth.register.consent.pointAnonymity')}</span>
-              </li>
+              {(consentBodyParagraphs.length
+                ? consentBodyParagraphs
+                : [
+                    t('auth.register.consent.pointResearch'),
+                    t('auth.register.consent.pointCamera'),
+                    t('auth.register.consent.pointAnonymity'),
+                  ]
+              ).map((line, index) => (
+                <li key={index}>
+                  <ShieldCheck size={16} />
+                  <span>{line}</span>
+                </li>
+              ))}
             </ul>
             <div className={styles.consentActions}>
               <button type="button" className="btn btn-secondary" onClick={handleConsentDecline}>

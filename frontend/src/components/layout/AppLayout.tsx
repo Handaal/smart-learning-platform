@@ -52,6 +52,13 @@ function resolvePageMeta(
     };
   }
 
+  if (pathname.startsWith('/research-admin/consent')) {
+    return {
+      title: t('layout.pageMeta.consentSettingsTitle', 'Consent & Terms'),
+      subtitle: t('layout.pageMeta.consentSettingsSubtitle', 'Registration consent text'),
+    };
+  }
+
   if (pathname.startsWith('/research-admin/help')) {
     return {
       title: t('layout.pageMeta.researchHelpTitle'),

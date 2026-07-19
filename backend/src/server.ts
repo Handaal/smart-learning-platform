@@ -15,6 +15,7 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { requestId } from './middleware/requestId';
 import { prisma } from './lib/prisma';
 import { redis } from './lib/redis';
+import { uploadsDir, ensureUploadsDir } from './lib/uploads';
 
 import authRoutes       from './api/auth/auth.routes';
 import learnerRoutes    from './api/learner/learner.routes';
@@ -26,6 +27,7 @@ import assessmentRoutes from './api/assessment/assessment.routes';
 import scenarioRoutes   from './api/scenario/scenario.routes';
 import quizRoutes       from './api/quiz/quiz.routes';
 import researchRoutes   from './api/research/research.routes';
+import settingsRoutes   from './api/settings/settings.routes';
 
 import { setupSocketIO } from './api/emotion/emotion.ws';
 
@@ -89,6 +91,13 @@ app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('combined', { stream: { write: msg => logger.http(msg.trim()) } }));
 app.use(requestId);
+
+// Admin-uploaded lesson files (PDFs) — served statically so learners can view
+// them in an iframe. Registered before the rate limiter so document viewing
+// isn't throttled like API calls.
+ensureUploadsDir();
+app.use('/uploads', express.static(uploadsDir, { maxAge: '1h' }));
+
 app.use(rateLimiter);
 
 // ── Health ────────────────────────────────────────────────────
@@ -142,6 +151,7 @@ app.use('/api/assessments',assessmentRoutes);
 app.use('/api/scenarios',  scenarioRoutes);
 app.use('/api/quizzes',    quizRoutes);
 app.use('/api/research',   researchRoutes);
+app.use('/api/settings',   settingsRoutes);
 
 // ── Error handler (must be last) ─────────────────────────────
 app.use(errorHandler);

@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
+import { writeFile } from 'fs/promises';
+import path from 'path';
 import { prisma } from '../../lib/prisma';
+import { uploadsDir, ensureUploadsDir } from '../../lib/uploads';
 import type { AffectState } from '@prisma/client';
 import { sanitizeQuizForLearner } from '../quiz/quiz.controller';
 import {
@@ -277,6 +281,25 @@ export async function getScenarioProgress(req: Request, res: Response, next: Nex
       include: { module: { select: { title: true, sequenceOrder: true, primaryCompetency: true } } },
     });
     res.json({ data: progress });
+  } catch (e) { next(e); }
+}
+
+export async function uploadContentFile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const buffer = req.body;
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+      return res.status(400).json({ error: 'No PDF file was received.' });
+    }
+    // Basic magic-number check so only real PDFs land on disk.
+    if (buffer.subarray(0, 5).toString('latin1') !== '%PDF-') {
+      return res.status(400).json({ error: 'The uploaded file is not a valid PDF.' });
+    }
+
+    ensureUploadsDir();
+    const fileName = `${randomUUID()}.pdf`;
+    await writeFile(path.join(uploadsDir, fileName), buffer);
+
+    res.status(201).json({ data: { url: `/uploads/${fileName}`, fileName } });
   } catch (e) { next(e); }
 }
 

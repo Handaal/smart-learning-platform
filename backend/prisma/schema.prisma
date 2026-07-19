@@ -950,3 +950,11 @@ model ResearchExportRecord {
   @@index([createdAt(sort: Desc)])
   @@map("research_export")
 }
+
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("platform_setting")
+}

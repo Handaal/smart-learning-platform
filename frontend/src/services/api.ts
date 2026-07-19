@@ -158,6 +158,25 @@ export const scenarioApi = {
   deleteContent:  (id: string) => request(`/scenarios/content/${id}`, { method: 'DELETE' }),
   reorderContent: (items: any[]) => post('/scenarios/content/reorder', { items }),
 
+  // Upload a PDF (raw binary) → returns a served URL to store as document content.
+  uploadPdf: async (file: File) => {
+    const token = useAuthStore.getState().accessToken;
+    const res = await fetch(`${BASE}/api/scenarios/content/upload-file`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/pdf',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: file,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) useAuthStore.getState().logout();
+      throw new ApiError(res.status, body.error ?? 'Upload failed', body.code);
+    }
+    return res.json() as Promise<{ data: { url: string; fileName: string } }>;
+  },
+
   reorder:       (items: any[]) => post('/scenarios/reorder', { items }),
 };
 
@@ -231,6 +250,19 @@ export const researchApi = {
       `/research/export/assessment-results?form=${form}`,
       form === 'pre' ? 'step_pretest_results.xlsx' : 'step_posttest_results.xlsx',
     ),
+};
+
+// ── Platform settings ────────────────────────────────────────
+export type ConsentContent = {
+  title: string;
+  intro: string;
+  body: string;
+  declineNote: string;
+};
+
+export const settingsApi = {
+  getConsent: () => get<{ data: ConsentContent }>('/settings/consent'),
+  updateConsent: (body: ConsentContent) => patch<{ data: ConsentContent }>('/settings/consent', body),
 };
 
 export { ApiError };

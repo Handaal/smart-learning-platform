@@ -63,3 +63,27 @@
   gap: 8px;
   padding-top: 4px;
 }
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uploadButton:hover {
+  border-color: var(--color-accent-2);
+}
+
+.uploadError {
+  color: var(--color-rose, #e11d48);
+  font-size: 0.76rem;
+}

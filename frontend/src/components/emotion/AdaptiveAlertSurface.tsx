@@ -25,6 +25,9 @@ type Choice = {
 type Props = {
   alert: AdaptivePayload;
   contentTitle?: string | null;
+  /** Show only the header (no message/actions/details) — used when an emotion is
+   *  detected but no content was authored for it. */
+  headerOnly?: boolean;
   choices?: Choice[];
   onSelectChoice?: (choiceKey: string) => void;
   onPrimaryAction?: () => void;
@@ -54,6 +57,7 @@ const SURFACE_CLASS: Record<AdaptivePayload['uiShape'], string> = {
 export default function AdaptiveAlertSurface({
   alert,
   contentTitle,
+  headerOnly = false,
   choices = [],
   onSelectChoice,
   onPrimaryAction,
@@ -81,8 +85,8 @@ export default function AdaptiveAlertSurface({
             {t('learner.session.adaptiveAlert.kicker', 'Smart learning support')}
           </span>
           <h3 className={styles.title}>{scenario.learnerTitle[locale]}</h3>
-          <p className={styles.message}>{scenario.learnerMessage[locale]}</p>
-          {contentTitle ? (
+          {!headerOnly ? <p className={styles.message}>{scenario.learnerMessage[locale]}</p> : null}
+          {!headerOnly && contentTitle ? (
             <span className={styles.contentTitle}>
               <BookOpenCheck size={14} />
               {contentTitle}
@@ -101,7 +105,7 @@ export default function AdaptiveAlertSurface({
         ) : null}
       </div>
 
-      {choiceMode ? (
+      {!headerOnly && choiceMode ? (
         <div className={styles.choices}>
           {choices.map((choice) => (
             <button
@@ -116,7 +120,7 @@ export default function AdaptiveAlertSurface({
         </div>
       ) : null}
 
-      {!choiceMode && onPrimaryAction && scenario.learnerActionLabel ? (
+      {!headerOnly && !choiceMode && onPrimaryAction && scenario.learnerActionLabel ? (
         <div className={styles.actions}>
           <button type="button" className="btn" onClick={onPrimaryAction}>
             <ArrowRight size={16} />
@@ -125,21 +129,23 @@ export default function AdaptiveAlertSurface({
         </div>
       ) : null}
 
-      <details className={styles.details}>
-        <summary className={styles.summary}>
-          {t('learner.session.adaptiveAlert.more', 'Why this support appeared')}
-        </summary>
-        <div className={styles.meta}>
-          <div className={styles.metaBlock}>
-            <strong>{t('learner.session.adaptiveAlert.helpLabel', 'How this helps')}</strong>
-            <p>{scenario.educationalInterpretation[locale]}</p>
+      {!headerOnly ? (
+        <details className={styles.details}>
+          <summary className={styles.summary}>
+            {t('learner.session.adaptiveAlert.more', 'Why this support appeared')}
+          </summary>
+          <div className={styles.meta}>
+            <div className={styles.metaBlock}>
+              <strong>{t('learner.session.adaptiveAlert.helpLabel', 'How this helps')}</strong>
+              <p>{scenario.educationalInterpretation[locale]}</p>
+            </div>
+            <div className={styles.metaBlock}>
+              <strong>{t('learner.session.adaptiveAlert.fallbackLabel', 'What happens if conditions change')}</strong>
+              <p>{scenario.fallbackBehavior[locale]}</p>
+            </div>
           </div>
-          <div className={styles.metaBlock}>
-            <strong>{t('learner.session.adaptiveAlert.fallbackLabel', 'What happens if conditions change')}</strong>
-            <p>{scenario.fallbackBehavior[locale]}</p>
-          </div>
-        </div>
-      </details>
+        </details>
+      ) : null}
     </section>
   );
 }

@@ -60,6 +60,7 @@ services:
       - "3001:3001"
     volumes:
       - backend_logs:/app/logs
+      - uploads_data:/app/uploads
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health/ready >/dev/null 2>&1 || exit 1"]
       interval: 15s
@@ -113,4 +114,5 @@ volumes:
   db_data:
   redis_data:
   backend_logs:
+  uploads_data:
   frontend_node_modules:

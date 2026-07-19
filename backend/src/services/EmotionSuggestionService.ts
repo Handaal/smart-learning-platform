@@ -50,6 +50,9 @@ export type ContentSuggestionPayload = {
   dominantEmotion: SuggestibleEmotion | 'no_face_low_confidence';
   intervention: string;
   uiShape: CanonicalAdaptiveUiShape;
+  /** When true, show only the "safe continuity" header (no descriptive body) —
+   *  used when an emotion is detected but the admin authored no content for it. */
+  headerOnly: boolean;
   distribution: Array<{ state: string; count: number }>;
   contentId: string | null;
   contentTitle: string | null;
@@ -110,13 +113,36 @@ export async function maybeBuildEmotionSuggestion(
     const noFaceCount = ranked.find((row) => row.state === 'no_face_low_confidence')?.count ?? 0;
     const neutralCount = ranked.find((row) => row.state === 'neutral')?.count ?? 0;
 
+    const episodeId = input.episodeId ?? session.episodeId ?? null;
+
     let scenarioKey: CanonicalAdaptiveScenarioKey;
     let dominantEmotion: ContentSuggestionPayload['dominantEmotion'];
+    let headerOnly = false;
+    let content: { id: string; contentData: unknown } | null = null;
 
     if (actionable.length > 0) {
-      scenarioKey = actionable[0].state as CanonicalAdaptiveScenarioKey;
-      dominantEmotion = actionable[0].state as SuggestibleEmotion;
+      const emotion = actionable[0].state as SuggestibleEmotion;
+      dominantEmotion = emotion;
+      // Only content the admin authored *for this emotion* counts — no baseline
+      // fallback — so we can tell when nothing has been set for the detected emotion.
+      if (episodeId) {
+        content = await prisma.learningContent.findFirst({
+          where: { episodeId, status: 'published', adaptiveTag: emotion as any },
+          orderBy: { sequenceOrder: 'asc' },
+          select: { id: true, contentData: true },
+        });
+      }
+      if (content) {
+        // Case C: a real emotion suggestion with authored content.
+        scenarioKey = emotion as CanonicalAdaptiveScenarioKey;
+      } else {
+        // Case B: emotion detected but no content authored for it → show only the
+        // "safe continuity" header (no descriptive body).
+        scenarioKey = 'no_face_low_confidence';
+        headerOnly = true;
+      }
     } else if (noFaceCount > 0 && noFaceCount >= neutralCount) {
+      // Case A: genuine camera loss → full safety notice (header + message).
       scenarioKey = 'no_face_low_confidence';
       dominantEmotion = 'no_face_low_confidence';
     } else {
@@ -125,26 +151,6 @@ export async function maybeBuildEmotionSuggestion(
     }
 
     const scenario = CANONICAL_ADAPTIVE_SCENARIOS[scenarioKey];
-    const episodeId = input.episodeId ?? session.episodeId ?? null;
-
-    // Emotion-tagged content lookup (neutral maps to the 'baseline' tag). No content
-    // is resolved for the camera-loss safety notice.
-    let content: { id: string; contentData: unknown } | null = null;
-    if (scenarioKey !== 'no_face_low_confidence' && episodeId) {
-      const preferredTag = scenarioKey === 'neutral' ? 'baseline' : scenarioKey;
-      content = await prisma.learningContent.findFirst({
-        where: { episodeId, status: 'published', adaptiveTag: preferredTag as any },
-        orderBy: { sequenceOrder: 'asc' },
-        select: { id: true, contentData: true },
-      });
-      if (!content && preferredTag !== 'baseline') {
-        content = await prisma.learningContent.findFirst({
-          where: { episodeId, status: 'published', adaptiveTag: 'baseline' as any },
-          orderBy: { sequenceOrder: 'asc' },
-          select: { id: true, contentData: true },
-        });
-      }
-    }
 
     const contentTitle =
       content && content.contentData && typeof content.contentData === 'object'
@@ -157,6 +163,7 @@ export async function maybeBuildEmotionSuggestion(
       dominantEmotion,
       intervention: scenario.intervention,
       uiShape: scenario.uiShape,
+      headerOnly,
       distribution: ranked,
       contentId: content?.id ?? null,
       contentTitle,
@@ -171,7 +178,7 @@ export async function maybeBuildEmotionSuggestion(
         episodeId,
         triggerType: 'per_result_emotion_suggestion',
         triggerPriority: 3,
-        affectStatePre: scenarioKey as any,
+        affectStatePre: dominantEmotion as any,
         behaviorSnapshot: {
           windowStart: new Date(windowStartMs).toISOString(),
           windowSeconds: payload.windowSeconds,

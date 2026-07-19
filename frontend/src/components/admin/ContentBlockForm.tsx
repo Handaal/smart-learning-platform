@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
+import { scenarioApi } from '@/services/api';
 import {
   CONTENT_TYPE_OPTIONS,
   PLACEMENT_OPTIONS,
@@ -87,6 +88,30 @@ export default function ContentBlockForm({
   const [anchorOrder, setAnchorOrder] = useState<string>(() =>
     initial && isEmotion ? String(initial.sequenceOrder ?? '') : '',
   );
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handlePdfUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setUploadError('الملف يجب أن يكون بصيغة PDF.');
+      return;
+    }
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const response = await scenarioApi.uploadPdf(file);
+      setUrl(response.data.url);
+      setRenderMode('document');
+      if (!heading.trim()) setHeading(file.name.replace(/\.pdf$/i, ''));
+    } catch {
+      setUploadError('تعذّر رفع الملف. حاول مرة أخرى.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const modalTitle = title ?? (initial ? 'تعديل المكوّن' : 'إضافة مكوّن');
 
@@ -202,13 +227,30 @@ export default function ContentBlockForm({
                 <input className="input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
               </label>
               {contentType === 'VISUAL' ? (
-                <label className={styles.field}>
-                  <span>طريقة العرض</span>
-                  <select className="input" value={renderMode} onChange={(e) => setRenderMode(e.target.value as 'image' | 'document')}>
-                    <option value="image">صورة</option>
-                    <option value="document">مستند / PDF</option>
-                  </select>
-                </label>
+                <>
+                  <label className={styles.field}>
+                    <span>طريقة العرض</span>
+                    <select className="input" value={renderMode} onChange={(e) => setRenderMode(e.target.value as 'image' | 'document')}>
+                      <option value="image">صورة</option>
+                      <option value="document">مستند / PDF</option>
+                    </select>
+                  </label>
+                  <div className={styles.field}>
+                    <span>أو ارفع ملف PDF</span>
+                    <label className={styles.uploadButton}>
+                      <Upload size={14} />
+                      {uploading ? 'جارٍ الرفع...' : 'اختيار ملف PDF'}
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        hidden
+                        disabled={uploading}
+                        onChange={handlePdfUpload}
+                      />
+                    </label>
+                    {uploadError ? <small className={styles.uploadError}>{uploadError}</small> : null}
+                  </div>
+                </>
               ) : null}
               <label className={styles.field}>
                 <span>وصف / تعليق (اختياري)</span>

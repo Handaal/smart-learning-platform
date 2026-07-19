@@ -9,6 +9,7 @@ import {
   LibraryBig,
   ListChecks,
   LogOut,
+  ShieldCheck,
   Wrench,
   X,
 } from 'lucide-react';
@@ -45,6 +46,13 @@ const RESEARCH_ADMIN_NAV: NavItem[] = [
   { to: '/research-admin/reports', icon: FlaskConical, key: 'layout.sidebar.nav.reports', label: 'Emotion Reports' },
   { to: '/research-admin/emotion-validation', icon: Camera, key: 'layout.sidebar.nav.emotionValidation', label: 'Emotion Validation Lab' },
   { to: '/research-admin/adaptive-display', icon: ListChecks, key: 'layout.sidebar.nav.adaptiveDisplayCriteria', label: 'Adaptive Display Criteria' },
+  {
+    to: '/research-admin/consent',
+    icon: ShieldCheck,
+    key: 'layout.sidebar.nav.consentSettings',
+    label: 'Consent & Terms',
+    arabicLabel: 'نص الموافقة والشروط',
+  },
   { to: '/research-admin/help', icon: CircleHelp, key: 'layout.sidebar.nav.help', label: 'Help Guide' },
 ];
 

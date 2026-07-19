@@ -557,6 +557,7 @@ export default function SessionPage() {
   const [selectedAdaptiveElementId, setSelectedAdaptiveElementId] = useState<string | null>(null);
   const [requestedAdaptiveElementId, setRequestedAdaptiveElementId] = useState<string | null>(null);
   const [suggestedContentTitle, setSuggestedContentTitle] = useState<string | null>(null);
+  const [suggestionHeaderOnly, setSuggestionHeaderOnly] = useState(false);
   const [dismissedNoticeKeys, setDismissedNoticeKeys] = useState<Record<string, true>>({});
   const [adaptiveEventCount, setAdaptiveEventCount] = useState(0);
   const [stepReadyCueVisible, setStepReadyCueVisible] = useState(false);
@@ -809,6 +810,7 @@ export default function SessionPage() {
     setRequestedAdaptiveElementId(null);
     setPendingAdaptiveAlert(null);
     setSuggestedContentTitle(null);
+    setSuggestionHeaderOnly(false);
   }, [lesson?.id]);
 
   useEffect(() => {
@@ -958,6 +960,7 @@ export default function SessionPage() {
           setSuggestedContentTitle(
             (suggestion as { contentTitle?: string | null }).contentTitle ?? null,
           );
+          setSuggestionHeaderOnly(Boolean((suggestion as { headerOnly?: boolean }).headerOnly));
         };
         tracker.onDiagnostics = (snapshot) => {
           setEmotionDiagnostics(snapshot);
@@ -1411,6 +1414,7 @@ export default function SessionPage() {
               <AdaptiveAlertSurface
                 alert={pendingAdaptiveAlert}
                 contentTitle={suggestedContentTitle}
+                headerOnly={suggestionHeaderOnly}
                 choices={adaptiveChoices}
                 onSelectChoice={adaptiveChoices.length ? handleAdaptiveChoiceSelection : undefined}
                 onPrimaryAction={

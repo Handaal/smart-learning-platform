@@ -37,6 +37,7 @@ const ResearchAdminHelpPage = lazy(() => import('@/pages/researchAdmin/ResearchA
 const EmotionValidationPage = lazy(() => import('@/pages/researchAdmin/EmotionValidationPage'));
 const AdaptiveDisplayCriteriaPage = lazy(() => import('@/pages/researchAdmin/AdaptiveDisplayCriteriaPage'));
 const ResearchAdminUserManagementPage = lazy(() => import('@/pages/researchAdmin/ResearchAdminUserManagementPage'));
+const ConsentSettingsPage = lazy(() => import('@/pages/researchAdmin/ConsentSettingsPage'));
 
 function parseJwtExpiry(token: string | null) {
   if (!token) return null;
@@ -214,6 +215,7 @@ export default function App() {
         <Route path="/research-admin/course" element={<CourseUnitsPage />} />
         <Route path="/research-admin/course/units/:unitId" element={<UnitLessonsPage />} />
         <Route path="/research-admin/access" element={<ResearchAdminUserManagementPage />} />
+        <Route path="/research-admin/consent" element={<ConsentSettingsPage />} />
         <Route path="/research-admin/reports" element={<ResearchDashboard />} />
         <Route path="/research-admin/emotion-validation" element={<EmotionValidationPage />} />
         <Route path="/research-admin/adaptive-display" element={<AdaptiveDisplayCriteriaPage />} />

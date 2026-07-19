@@ -589,22 +589,24 @@
   bottom: 96px;
 }
 
+/* Centered docks use physical `left` (not the logical inset-inline-start) so the
+   translateX(-50%) centering stays correct in RTL as well as LTR. */
 .dock_mini_task_strip {
-  inset-inline-start: 50%;
+  left: 50%;
   transform: translateX(-50%);
   bottom: 88px;
   width: min(680px, calc(100vw - 32px));
 }
 
 .dock_popup_card {
-  inset-inline-start: 50%;
+  left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(560px, calc(100vw - 32px));
 }
 
 .dock_operational_safety_protocol {
-  inset-inline-start: 50%;
+  left: 50%;
   transform: translateX(-50%);
   top: 12px;
   width: min(680px, calc(100vw - 32px));
