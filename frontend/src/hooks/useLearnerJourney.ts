@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { assessmentApi, learnerApi } from '@/services/api';
 import {
@@ -8,8 +8,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 
 export type LearnerJourneyStage =
-  | 'consent'
-  | 'setup'
+  | 'pending_approval'
   | 'ready'
   | 'pretest'
   | 'training'
@@ -24,15 +23,10 @@ function isCompletedAssessment(entry: unknown, form: 'pre' | 'post') {
 
 export function useLearnerJourney() {
   const learnerId = useAuthStore((state) => state.learnerId);
+  const isActive = useAuthStore((state) => state.isActive);
+  const setUser = useAuthStore((state) => state.setUser);
   const isEnabled = Boolean(learnerId);
   const onboardingProgress = useLearnerOnboardingProgress(learnerId);
-
-  const consentQuery = useQuery({
-    queryKey: ['journey', 'consent', learnerId],
-    queryFn: () => learnerApi.getConsent(learnerId!),
-    enabled: isEnabled,
-    staleTime: 60_000,
-  });
 
   const progressQuery = useQuery({
     queryKey: ['journey', 'progress', learnerId],
@@ -48,8 +42,36 @@ export function useLearnerJourney() {
     staleTime: 20_000,
   });
 
+  useEffect(() => {
+    const access = ((progressQuery.data as { data?: any } | undefined)?.data?.access ?? null) as
+      | {
+          isActive?: boolean;
+          groupLabel?: string;
+          groupEmotionTrackingEnabled?: boolean;
+          emotionTrackingOverride?: boolean | null;
+          emotionTrackingEnabled?: boolean;
+        }
+      | null;
+
+    if (!access) return;
+
+    setUser({
+      isActive: typeof access.isActive === 'boolean' ? access.isActive : isActive,
+      groupLabel: typeof access.groupLabel === 'string' ? access.groupLabel : undefined,
+      groupEmotionTrackingEnabled:
+        typeof access.groupEmotionTrackingEnabled === 'boolean'
+          ? access.groupEmotionTrackingEnabled
+          : undefined,
+      emotionTrackingOverride:
+        typeof access.emotionTrackingOverride === 'boolean' || access.emotionTrackingOverride === null
+          ? access.emotionTrackingOverride
+          : undefined,
+      emotionTrackingEnabled:
+        typeof access.emotionTrackingEnabled === 'boolean' ? access.emotionTrackingEnabled : undefined,
+    });
+  }, [isActive, progressQuery.data, setUser]);
+
   const state = useMemo(() => {
-    const hasConsent = Boolean((consentQuery.data as { data?: unknown } | undefined)?.data);
     const assessmentRows = ((assessmentsQuery.data as { data?: unknown[] } | undefined)?.data ?? []) as unknown[];
     const hasPretest = assessmentRows.some((row) => isCompletedAssessment(row, 'pre'));
     const hasPosttest = assessmentRows.some((row) => isCompletedAssessment(row, 'post'));
@@ -61,8 +83,7 @@ export function useLearnerJourney() {
     const allUnitsComplete = totalUnits > 0 && completedUnits >= totalUnits;
 
     let stage: LearnerJourneyStage = 'training';
-    if (!hasConsent) stage = 'consent';
-    else if (!hasPretest && !onboardingProgress.profileComplete) stage = 'setup';
+    if (isActive === false) stage = 'pending_approval';
     else if (!hasPretest && !onboardingProgress.readyAcknowledged) stage = 'ready';
     else if (!hasPretest) stage = 'pretest';
     else if (allUnitsComplete && !hasPosttest) stage = 'posttest';
@@ -70,7 +91,6 @@ export function useLearnerJourney() {
 
     return {
       stage,
-      hasConsent,
       hasPretest,
       hasPosttest,
       allUnitsComplete,
@@ -79,14 +99,14 @@ export function useLearnerJourney() {
       onboardingProgress,
       allowUnitsBeforePretest,
     };
-  }, [assessmentsQuery.data, consentQuery.data, onboardingProgress, progressQuery.data]);
+  }, [assessmentsQuery.data, isActive, onboardingProgress, progressQuery.data]);
 
   return {
     ...state,
-    isLoading: consentQuery.isLoading || progressQuery.isLoading || assessmentsQuery.isLoading,
-    isError: consentQuery.isError || progressQuery.isError || assessmentsQuery.isError,
+    isLoading: progressQuery.isLoading || assessmentsQuery.isLoading,
+    isError: progressQuery.isError || assessmentsQuery.isError,
     refetch: async () => {
-      await Promise.allSettled([consentQuery.refetch(), progressQuery.refetch(), assessmentsQuery.refetch()]);
+      await Promise.allSettled([progressQuery.refetch(), assessmentsQuery.refetch()]);
     },
   };
 }

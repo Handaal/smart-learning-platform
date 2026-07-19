@@ -6,12 +6,12 @@
 
 .card {
   width: min(760px, 100%);
-  padding: clamp(22px, 3vw, 34px);
-  border-radius: 28px;
+  padding: clamp(20px, 2.4vw, 28px);
+  border-radius: 24px;
   border: 1px solid var(--color-border);
   background:
     radial-gradient(circle at top right, rgba(18, 148, 139, 0.12), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 250, 0.98));
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
   box-shadow: var(--shadow-md);
   display: grid;
   gap: 16px;
@@ -50,7 +50,7 @@
   padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(255, 255, 255, 0.84);
+  background: var(--color-surface);
   color: var(--color-text);
   font-weight: 600;
 }

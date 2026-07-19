@@ -5,7 +5,7 @@ type Props = {
   icon: LucideIcon;
   title: string;
   subtitle?: string;
-  tone?: 'teal' | 'blue' | 'amber' | 'success';
+  tone?: 'teal' | 'blue' | 'amber' | 'success' | 'violet' | 'rose' | 'coral' | 'indigo';
   level?: 'h2' | 'h3';
 };
 
@@ -24,7 +24,15 @@ export default function SectionTitle({
         ? styles.toneAmber
         : tone === 'success'
           ? styles.toneSuccess
-          : styles.toneTeal;
+          : tone === 'violet'
+            ? styles.toneViolet
+            : tone === 'rose'
+              ? styles.toneRose
+              : tone === 'coral'
+                ? styles.toneCoral
+                : tone === 'indigo'
+                  ? styles.toneIndigo
+                  : styles.toneTeal;
 
   return (
     <div className={styles.root}>

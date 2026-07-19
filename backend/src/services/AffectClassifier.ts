@@ -25,6 +25,9 @@ export class AffectClassifier {
     return Math.max(0, Math.min(1, value));
   }
 
+  // Mirrors ai-services/services/affect_classifier.py `_classify_rules` so the
+  // local fallback (used when the Python service is unreachable) produces the
+  // same verdicts. AUs are deviation-from-neutral blendshape intensities (0..1).
   private localRuleClassify(auVector: AUVector): ClassificationResult {
     const au1 = auVector.au1 ?? 0;
     const au4 = auVector.au4 ?? 0;
@@ -32,53 +35,31 @@ export class AffectClassifier {
     const au12 = auVector.au12 ?? 0;
     const au20 = auVector.au20 ?? 0;
     const au23 = auVector.au23 ?? 0;
+    const auMax = Math.max(au1, au4, au6, au12, au20, au23);
+    const conf = (base: number, margin: number) => this.clamp01(Math.min(base + margin, 0.95));
 
-    const strainScore = this.clamp01(au23 * 0.46 + au20 * 0.32 + au4 * 0.22);
-    const uncertaintyScore = this.clamp01(au1 * 0.52 + au4 * 0.24 + au20 * 0.24);
-    const positiveScore = this.clamp01(au6 * 0.42 + au12 * 0.58);
-    const activationPeak = Math.max(au1, au4, au6, au12, au20, au23);
-
-    if (strainScore >= 0.62 && positiveScore < 0.46) {
-      return {
-        state: 'frustration',
-        confidence: this.clamp01(0.58 + (strainScore - 0.62) * 1.2),
-        modelVersion: FALLBACK_MODEL_VERSION,
-      };
+    // Priority 1: Frustration — brow lowered + lips pressed, not smiling
+    if (au4 > 0.18 && au23 > 0.12 && au12 < 0.2) {
+      return { state: 'frustration', confidence: conf(0.62, (au4 + au23 - 0.3) * 0.6), modelVersion: FALLBACK_MODEL_VERSION };
+    }
+    // Priority 2: Confusion — brow activity (inner raise OR furrow), not smiling, not pressing lips
+    if ((au1 > 0.12 || au4 > 0.12) && au12 < 0.22 && au23 < 0.15) {
+      return { state: 'confusion', confidence: conf(0.62, (Math.max(au1, au4) - 0.12) * 0.8), modelVersion: FALLBACK_MODEL_VERSION };
+    }
+    // Priority 3: Test anxiety — lip stretch + inner brow raise
+    if (au20 > 0.18 && au1 > 0.12) {
+      return { state: 'test_anxiety', confidence: conf(0.62, (au20 + au1 - 0.3) * 0.5), modelVersion: FALLBACK_MODEL_VERSION };
+    }
+    // Priority 4: High engagement — a genuine smile (lip-corner pull), not just squinting
+    if (au12 > 0.18) {
+      return { state: 'high_engagement', confidence: conf(0.62, (au12 - 0.18) * 0.8), modelVersion: FALLBACK_MODEL_VERSION };
+    }
+    // Priority 5: Boredom — near-zero activation (blank, still face)
+    if (auMax < 0.08) {
+      return { state: 'boredom_disengagement', confidence: 0.6, modelVersion: FALLBACK_MODEL_VERSION };
     }
 
-    if (uncertaintyScore >= 0.56 && strainScore < 0.7) {
-      return {
-        state: 'confusion',
-        confidence: this.clamp01(0.56 + (uncertaintyScore - 0.56) * 1.25),
-        modelVersion: FALLBACK_MODEL_VERSION,
-      };
-    }
-
-    if (positiveScore >= 0.54 && strainScore < 0.46) {
-      return {
-        state: 'high_engagement',
-        confidence: this.clamp01(0.58 + (positiveScore - 0.54) * 1.25),
-        modelVersion: FALLBACK_MODEL_VERSION,
-      };
-    }
-
-    const lowActivationPattern =
-      activationPeak < 0.23 ||
-      (au1 < 0.24 && au4 < 0.24 && au6 < 0.24 && au12 < 0.24 && au20 < 0.24 && au23 < 0.24);
-
-    if (lowActivationPattern) {
-      return {
-        state: 'boredom_disengagement',
-        confidence: this.clamp01(0.58 + (0.24 - Math.min(activationPeak, 0.24))),
-        modelVersion: FALLBACK_MODEL_VERSION,
-      };
-    }
-
-    return {
-      state: 'neutral',
-      confidence: 0.62,
-      modelVersion: FALLBACK_MODEL_VERSION,
-    };
+    return { state: 'neutral', confidence: 0.62, modelVersion: FALLBACK_MODEL_VERSION };
   }
 
   async classify(sessionId: string, learnerId: string, auVector: AUVector): Promise<ClassificationResult> {

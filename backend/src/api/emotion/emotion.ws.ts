@@ -6,6 +6,9 @@ import { prisma } from '../../lib/prisma';
 import { redis } from '../../lib/redis';
 import { AdaptiveEngine } from '../../services/AdaptiveEngine';
 import { AffectClassifier } from '../../services/AffectClassifier';
+import { maybeBuildEmotionSuggestion } from '../../services/EmotionSuggestionService';
+import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
+import { EMOTION_CONFIDENCE_THRESHOLD } from '../../policy/adaptive-alerts-policy';
 import { logger } from '../../lib/logger';
 import type {
   AUVector,
@@ -36,7 +39,7 @@ const OFFSCREEN_STREAK_FOR_FACE_LOST = 6;
 const ATTENTIVE_STREAK_FOR_FOCUS = 6;
 const FOCUS_ATTENTION_SCORE_THRESHOLD = 0.68;
 const PERFORMANCE_ONLY_QUALITY_THRESHOLD = 0.55;
-const MONITOR_ONLY_CONFIDENCE_THRESHOLD = 0.7;
+const MONITOR_ONLY_CONFIDENCE_THRESHOLD = EMOTION_CONFIDENCE_THRESHOLD;
 
 interface SessionAffectTracker {
   lastFinalState: ResearchAffectState;
@@ -92,6 +95,43 @@ function getSessionAffectTracker(sessionId: string): SessionAffectTracker {
   };
   sessionAffectTrackers.set(sessionId, fresh);
   return fresh;
+}
+
+// States that represent a recovered/positive learner condition. If affect lands
+// here in the window after an intervention, we count the intervention effective.
+const RECOVERED_AFFECT_STATES: ResearchAffectState[] = ['high_engagement', 'neutral'];
+const EFFECTIVENESS_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Score the most recent unresolved intervention for a session against the affect
+ * observed in the following window, and persist wasEffective + affectStatePost.
+ * No-ops when the latest event is already resolved, too old, or on a low-signal
+ * frame (no_face) where attribution would be meaningless.
+ */
+async function evaluatePendingAdaptiveEffectiveness(
+  sessionId: string,
+  currentState: ResearchAffectState,
+): Promise<void> {
+  if (!currentState || currentState === 'no_face_low_confidence') return;
+  try {
+    const latest = await prisma.adaptiveEvent.findFirst({
+      where: { sessionId, wasEffective: null, affectStatePost: null },
+      orderBy: { occurredAt: 'desc' },
+      select: { id: true, occurredAt: true },
+    });
+    if (!latest) return;
+    if (Date.now() - latest.occurredAt.getTime() > EFFECTIVENESS_WINDOW_MS) return;
+
+    await prisma.adaptiveEvent.update({
+      where: { id: latest.id },
+      data: {
+        affectStatePost: currentState as any,
+        wasEffective: RECOVERED_AFFECT_STATES.includes(currentState),
+      },
+    });
+  } catch (error) {
+    logger.error('evaluatePendingAdaptiveEffectiveness failed', error);
+  }
 }
 
 function mapClassifierToResearchState(classifiedState: string): ResearchAffectState {
@@ -202,11 +242,13 @@ function deriveResearchAffectState(
     tracker.noFaceStreak >= NO_FACE_STREAK_FOR_FACE_LOST ||
     tracker.offScreenStreak >= OFFSCREEN_STREAK_FOR_FACE_LOST ||
     faceQualityScore < PERFORMANCE_ONLY_QUALITY_THRESHOLD;
-  const recoveredAttentionEvidence =
-    faceDetected &&
-    tracker.offScreenStreak < Math.max(2, OFFSCREEN_STREAK_FOR_FACE_LOST - 2) &&
-    attentivePresenceScore >= 0.58;
 
+  // Lean derivation: trust the classifier's verdict on real Action Units.
+  // The ONLY overrides are (a) operational face-loss and (b) holding the
+  // previous state on a genuinely low-confidence frame. Temporal smoothing
+  // (below) absorbs single-frame noise. The previous ~10-branch cascade that
+  // rewrote minority states into neutral/high_engagement is removed — that bias
+  // is what made every session collapse to the same output.
   if (confirmedFaceLost) {
     candidateState = 'no_face_low_confidence';
     reason =
@@ -215,62 +257,9 @@ function deriveResearchAffectState(
         : tracker.offScreenStreak >= OFFSCREEN_STREAK_FOR_FACE_LOST
           ? `face_lost:offscreen_streak_${tracker.offScreenStreak}`
           : `face_lost:quality_${faceQualityScore.toFixed(2)}`;
-  } else if (
-    rawState === 'no_face_low_confidence' &&
-    recoveredAttentionEvidence
-  ) {
-    candidateState = tracker.attentiveStreak >= 4 ? 'high_engagement' : 'neutral';
-    reason = 'fallback:face_lost_softened_due_to_recovered_attention';
-  } else if (
-    rawState === 'frustration' &&
-    strainScore < 0.45 &&
-    classifierConfidence < 0.76
-  ) {
-    candidateState = uncertaintyScore >= 0.5 ? 'confusion' : 'neutral';
-    reason =
-      candidateState === 'confusion'
-        ? 'fallback:frustration_softened_to_confusion_low_strain'
-        : 'fallback:frustration_softened_to_neutral_low_strain';
-  } else if (
-    rawState === 'confusion' &&
-    uncertaintyScore < 0.4 &&
-    attentiveEvidence &&
-    classifierConfidence < 0.68
-  ) {
-    candidateState = 'neutral';
-    reason = 'fallback:confusion_softened_to_neutral_stable_attention';
-  } else if (
-    rawState === 'boredom_disengagement' &&
-    (passiveScore < 0.8 || tracker.attentiveStreak >= 3 || attentivePresenceScore >= 0.62) &&
-    classifierConfidence < 0.84
-  ) {
-    candidateState = 'neutral';
-    reason = 'fallback:boredom_softened_to_neutral_without_passive_pattern';
-  } else if (
-    (rawState === 'no_face_low_confidence' || rawState === 'neutral' || rawState === 'boredom_disengagement') &&
-    tracker.attentiveStreak >= ATTENTIVE_STREAK_FOR_FOCUS &&
-    classifierConfidence >= 0.54 &&
-    attentivePresenceScore >= FOCUS_ATTENTION_SCORE_THRESHOLD
-  ) {
-    candidateState = 'high_engagement';
-    reason = `focus:attentive_presence_streak_${tracker.attentiveStreak}`;
-  } else if (
-    (rawState === 'no_face_low_confidence' || rawState === 'neutral') &&
-    recoveredAttentionEvidence &&
-    classifierConfidence >= 0.45
-  ) {
-    candidateState = 'neutral';
-    reason = 'fallback:neutral_attentive_presence';
-  } else if (
-    rawState === 'high_engagement' &&
-    attentionScore < 0.5 &&
-    classifierConfidence < 0.65
-  ) {
-    candidateState = 'neutral';
-    reason = 'fallback:focused_softened_to_neutral_due_to_low_attention_signal';
-  } else if ((rawState === 'no_face_low_confidence' || rawState === 'test_anxiety') && classifierConfidence < 0.55) {
+  } else if (rawState !== 'no_face_low_confidence' && classifierConfidence < EMOTION_CONFIDENCE_THRESHOLD) {
     candidateState = tracker.lastFinalState;
-    reason = `fallback:hold_previous_low_confidence_${Math.round(classifierConfidence * 100)}`;
+    reason = `hold_low_confidence_${Math.round(classifierConfidence * 100)}`;
   }
 
   tracker.confidenceWindow.push(classifierConfidence);
@@ -461,6 +450,11 @@ export function setupSocketIO(httpServer: HttpServer) {
 
     socket.on('emotion_frame', async (frame: EmotionEventPayload) => {
       try {
+        const access = await resolveLearnerAccessSnapshot(learnerId, { allowCache: true });
+        if (!access.emotionTrackingEnabled) {
+          return;
+        }
+
         activeSessionIds.add(frame.sessionId);
         const state = await classifier.classify(frame.sessionId, learnerId, frame.auVector);
         const safeEpisodeId = await resolveValidEpisodeId(frame.episodeId);
@@ -491,7 +485,7 @@ export function setupSocketIO(httpServer: HttpServer) {
             auConfidence: frame.auVector.confidence,
             classifiedState: persistedState as any,
             classificationConfidence: state.confidence,
-            isBelowThreshold: state.confidence < 0.65,
+            isBelowThreshold: state.confidence < EMOTION_CONFIDENCE_THRESHOLD,
           },
         });
 
@@ -559,6 +553,7 @@ export function setupSocketIO(httpServer: HttpServer) {
 
     socket.on('behavior_window', async (bw: BehaviorWindowPayload) => {
       try {
+        const access = await resolveLearnerAccessSnapshot(learnerId, { allowCache: true });
         const safeEpisodeId = await resolveValidEpisodeId(bw.episodeId);
         await prisma.behaviorWindow.create({
           data: {
@@ -628,14 +623,21 @@ export function setupSocketIO(httpServer: HttpServer) {
           ? (Date.now() - session.startedAt.getTime()) / 60000
           : bw.dwellTimeSec / 60;
 
+        // Auto-evaluate the previous intervention's effectiveness from the
+        // affect observed in this following window (server-side fallback so
+        // wasEffective is populated even if the learner never reports a
+        // response). The frontend response endpoint can still override later.
+        await evaluatePendingAdaptiveEffectiveness(
+          bw.sessionId,
+          (emotionSnapshot?.state ?? classifier.getCurrentState(bw.sessionId)) as ResearchAffectState,
+        );
+
         const decision = await engine.decide({
           sessionId: bw.sessionId,
           learnerId,
           participantId,
-          // Group-aware branching lives here: control learners keep the
-          // standard flow, while experimental learners may receive
-          // facial-expression-based adaptive support.
           cohort: learnerCohort,
+          emotionTrackingEnabled: access.emotionTrackingEnabled,
           episodeId: bw.episodeId ?? session?.episodeId ?? undefined,
           affectState: persistedAffectState(
             (emotionSnapshot?.state ?? classifier.getCurrentState(bw.sessionId)) as ResearchAffectState,
@@ -650,6 +652,19 @@ export function setupSocketIO(httpServer: HttpServer) {
 
         if (decision.intervention !== 'do_nothing') {
           socket.emit('adaptation', decision);
+        }
+
+        // Per-result (~15s) emotion suggestion layer: the unified adaptive
+        // surface on the learner. Separate Redis cooldown from the fast alerts.
+        const suggestion = await maybeBuildEmotionSuggestion({
+          sessionId: bw.sessionId,
+          learnerId,
+          episodeId: bw.episodeId ?? session?.episodeId ?? null,
+          emotionTrackingEnabled: access.emotionTrackingEnabled,
+        });
+        if (suggestion) {
+          socket.emit('content_suggestion', suggestion);
+          io.to(`researcher_learner_${learnerId}`).emit('content_suggestion', suggestion);
         }
       } catch (error) {
         logger.error('behavior_window handling error', error);

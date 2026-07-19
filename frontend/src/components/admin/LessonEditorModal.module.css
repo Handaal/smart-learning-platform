@@ -1,0 +1,216 @@
+.editorCard {
+  width: min(760px, 100%);
+  max-height: min(90vh, 940px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.editorHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: clamp(14px, 2vw, 20px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.editorHead .eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-text-2);
+  margin-bottom: 2px;
+}
+
+.editorHead strong {
+  font-size: 1.1rem;
+}
+
+.eyebrow {
+  color: var(--color-text-2);
+}
+
+.tabBar {
+  display: flex;
+  gap: 6px;
+  padding: 10px clamp(14px, 2vw, 20px);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tabButton:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent-2);
+}
+
+.tabButtonActive {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.editorBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: clamp(14px, 2vw, 22px);
+}
+
+.form,
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.field > span {
+  color: var(--color-text-2);
+  font-weight: 600;
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelHead p {
+  font-size: 0.85rem;
+  color: var(--color-text-2);
+  margin: 0;
+}
+
+.blockList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blockCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.blockCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blockMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.tagMuted {
+  font-size: 0.7rem;
+  color: var(--color-text-2);
+}
+
+.blockActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.emotionSection {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emotionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.emotionHeadCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emotionResultTag {
+  align-self: flex-start;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+}
+
+.emotionHeadCopy strong {
+  font-size: 1rem;
+}
+
+.emotionHeadCopy small {
+  color: var(--color-text-2);
+  font-size: 0.76rem;
+}
+
+.empty {
+  padding: 18px;
+  text-align: center;
+  color: var(--color-text-2);
+  font-size: 0.85rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+}

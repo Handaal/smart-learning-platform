@@ -12,16 +12,18 @@ import {
   Route,
 } from 'lucide-react';
 import { sessionApi, scenarioApi } from '@/services/api';
-import { EmotionTracker } from '@/services/emotionTracker';
+import { EmotionTracker, type EmotionTrackerDiagnostics } from '@/services/emotionTracker';
 import { useEmotionStore, type AdaptivePayload } from '@/store/emotionStore';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
 import { MOCK_MODULES, MOCK_SESSION_DETAIL, USE_MOCK } from '@/services/mockData';
 import AdaptiveAlertSurface from '@/components/emotion/AdaptiveAlertSurface';
+import LearnerEmotionPanel from '@/components/learner/LearnerEmotionPanel';
 import type { LessonQuiz } from '@/components/admin/LessonQuizBuilder';
 import LessonContentBlock, { type LessonContentElement } from '@/components/learner/LessonContentBlock';
 import LessonQuizPanel from '@/components/learner/LessonQuizPanel';
+import Skeleton from '@/components/ui/Skeleton';
 import type { LearnerStepPresentation, LearnerStepRuntimeState } from '@/components/learner/lessonFlow';
 import { insertAdaptiveIntoBaseline } from '@/utils/adaptivePlacement';
 import {
@@ -534,13 +536,16 @@ export default function SessionPage() {
   const { t, isRtl } = useI18n();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const learnerCohort = useAuthStore((state) => state.cohort);
+  const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackerRef = useRef<EmotionTracker | null>(null);
   const hydratedEpisodeRef = useRef(false);
   const stepHeaderRef = useRef<HTMLDivElement | null>(null);
 
   const [wsReady, setWsReady] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [streamReady, setStreamReady] = useState(false);
+  const [emotionDiagnostics, setEmotionDiagnostics] = useState<EmotionTrackerDiagnostics | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [furthestLessonIndexReached, setFurthestLessonIndexReached] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -551,6 +556,8 @@ export default function SessionPage() {
   const [currentStepState, setCurrentStepState] = useState<LearnerStepRuntimeState | null>(null);
   const [selectedAdaptiveElementId, setSelectedAdaptiveElementId] = useState<string | null>(null);
   const [requestedAdaptiveElementId, setRequestedAdaptiveElementId] = useState<string | null>(null);
+  const [suggestedContentTitle, setSuggestedContentTitle] = useState<string | null>(null);
+  const [suggestionHeaderOnly, setSuggestionHeaderOnly] = useState(false);
   const [dismissedNoticeKeys, setDismissedNoticeKeys] = useState<Record<string, true>>({});
   const [adaptiveEventCount, setAdaptiveEventCount] = useState(0);
   const [stepReadyCueVisible, setStepReadyCueVisible] = useState(false);
@@ -566,6 +573,7 @@ export default function SessionPage() {
   });
 
   const currentState = useEmotionStore((state) => state.currentState);
+  const emotionConfidence = useEmotionStore((state) => state.confidence);
   const pendingAdaptiveAlert = useEmotionStore((state) => state.pendingAdaptiveAlert);
   const setAffectState = useEmotionStore((state) => state.setAffectState);
   const setPendingAdaptiveAlert = useEmotionStore((state) => state.setPendingAdaptiveAlert);
@@ -609,7 +617,7 @@ export default function SessionPage() {
   const lessonQuizzes = lessonDetail?.quizzes ?? [];
   // Control-group learners stay on the standard lesson path. The
   // existing adaptive model remains active only for the experimental group.
-  const adaptiveExperienceEnabled = learnerCohort !== 'control';
+  const adaptiveExperienceEnabled = Boolean(emotionTrackingEnabled);
   const pendingScenarioKey =
     pendingAdaptiveAlert?.scenarioKey ?? mapTriggerTypeToState(pendingAdaptiveAlert?.triggerType);
   const adaptiveNoticeState = useMemo(
@@ -801,6 +809,8 @@ export default function SessionPage() {
     setSelectedAdaptiveElementId(null);
     setRequestedAdaptiveElementId(null);
     setPendingAdaptiveAlert(null);
+    setSuggestedContentTitle(null);
+    setSuggestionHeaderOnly(false);
   }, [lesson?.id]);
 
   useEffect(() => {
@@ -904,16 +914,28 @@ export default function SessionPage() {
 
   useEffect(() => {
     const episodeId = lesson?.id ?? session?.episodeId ?? 'E1';
-    if (!sessionId || !videoRef.current || USE_MOCK || !adaptiveExperienceEnabled) {
+    if (!sessionId || !videoRef.current || USE_MOCK || !adaptiveExperienceEnabled || !cameraEnabled) {
       setWebcamActive(false);
+      setStreamReady(false);
       return;
     }
 
+    let cancelled = false;
+
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'user', width: 320 } })
+      // 320px was too low for reliable MediaPipe face-landmark detection at a normal
+      // webcam distance (most frames came back no_face_low_confidence). Request a
+      // higher resolution so the face mesh has enough detail to lock on.
+      .getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      })
       .then((stream) => {
-        if (!videoRef.current) return;
+        if (cancelled || !videoRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         videoRef.current.srcObject = stream;
+        setStreamReady(true);
 
         const tracker = new EmotionTracker(sessionId, episodeId);
         tracker.onStateUpdate = (state) => {
@@ -925,8 +947,23 @@ export default function SessionPage() {
         };
         tracker.onIntervention = (decision) => {
           if (!adaptiveExperienceEnabled) return;
-          setPendingAdaptiveAlert(decision);
+          // The fast AdaptiveEngine still drives scaffold changes + research logging,
+          // but the visible surface is now unified onto the per-result suggestion below.
           if (decision.scaffoldTo) setScaffoldLevel(decision.scaffoldTo);
+        };
+        tracker.onSuggestion = (suggestion) => {
+          if (!adaptiveExperienceEnabled) return;
+          // Per-result (~15s) suggestion IS the single adaptive surface. It carries a
+          // scenarioKey/uiShape/intervention/contentId, so the store sanitizes it into a
+          // full payload and the existing surface + content-insertion machinery reuse it.
+          setPendingAdaptiveAlert(suggestion as never);
+          setSuggestedContentTitle(
+            (suggestion as { contentTitle?: string | null }).contentTitle ?? null,
+          );
+          setSuggestionHeaderOnly(Boolean((suggestion as { headerOnly?: boolean }).headerOnly));
+        };
+        tracker.onDiagnostics = (snapshot) => {
+          setEmotionDiagnostics(snapshot);
         };
 
         tracker.initialize(videoRef.current).then(() => {
@@ -935,13 +972,21 @@ export default function SessionPage() {
         });
         trackerRef.current = tracker;
       })
-      .catch(() => setWebcamActive(false));
+      .catch(() => {
+        setWebcamActive(false);
+        setStreamReady(false);
+      });
 
     return () => {
+      cancelled = true;
       trackerRef.current?.stopTracking();
+      trackerRef.current = null;
       setWebcamActive(false);
+      setStreamReady(false);
+      setEmotionDiagnostics(null);
       if (videoRef.current?.srcObject) {
         (videoRef.current.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
       }
     };
   }, [
@@ -954,6 +999,7 @@ export default function SessionPage() {
     setScaffoldLevel,
     setWebcamActive,
     adaptiveExperienceEnabled,
+    cameraEnabled,
   ]);
 
   useEffect(() => {
@@ -1149,8 +1195,6 @@ export default function SessionPage() {
 
   return (
     <div className={styles.page}>
-      <video ref={videoRef} className={styles.hiddenVideo} muted playsInline aria-hidden="true" />
-
       {showOutline ? <button className={styles.drawerBackdrop} onClick={() => setShowOutline(false)} aria-label={t('layout.sidebar.closeNavigation')} /> : null}
 
       <header className={styles.header}>
@@ -1181,7 +1225,7 @@ export default function SessionPage() {
         </div>
       </header>
 
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${adaptiveExperienceEnabled ? styles.layoutWithPanel : ''}`}>
         <aside className={`${styles.outlineDrawer} ${showOutline ? styles.outlineDrawerOpen : ''}`}>
           <section className={styles.outlineSection}>
             <div className={styles.outlineHead}>
@@ -1260,7 +1304,13 @@ export default function SessionPage() {
         <main className={styles.main}>
           <section className={styles.player}>
             {lessonLoading ? (
-              <div className={styles.emptyState}>{t('common.loading')}</div>
+              <div className={styles.stepStage}>
+                <Skeleton variant="line" lines={2} />
+                <div style={{ height: 12 }} />
+                <Skeleton variant="block" height={180} />
+                <div style={{ height: 12 }} />
+                <Skeleton variant="line" lines={3} />
+              </div>
             ) : !lessonSteps.length ? (
               <div className={styles.emptyState}>{t('common.errors.unavailable')}</div>
             ) : currentStep ? (
@@ -1356,22 +1406,45 @@ export default function SessionPage() {
           </section>
 
           {showAdaptiveAlertSurface && pendingAdaptiveAlert ? (
-            <AdaptiveAlertSurface
-              alert={pendingAdaptiveAlert}
-              choices={adaptiveChoices}
-              onSelectChoice={adaptiveChoices.length ? handleAdaptiveChoiceSelection : undefined}
-              onPrimaryAction={
-                adaptiveChoices.length
-                  ? undefined
-                  : adaptiveSupportAvailable &&
-                      pendingScenarioKey !== 'test_anxiety' &&
-                      pendingScenarioKey !== 'no_face_low_confidence'
-                    ? () => openSupportStep()
-                    : undefined
-              }
-              onDismissed={dismissAdaptiveNoticeForCurrentStep}
-            />
+            <div
+              className={`${styles.adaptiveDock} ${
+                styles[`dock_${pendingAdaptiveAlert.uiShape}`] ?? ''
+              }`}
+            >
+              <AdaptiveAlertSurface
+                alert={pendingAdaptiveAlert}
+                contentTitle={suggestedContentTitle}
+                headerOnly={suggestionHeaderOnly}
+                choices={adaptiveChoices}
+                onSelectChoice={adaptiveChoices.length ? handleAdaptiveChoiceSelection : undefined}
+                onPrimaryAction={
+                  adaptiveChoices.length
+                    ? undefined
+                    : adaptiveSupportAvailable &&
+                        pendingScenarioKey !== 'test_anxiety' &&
+                        pendingScenarioKey !== 'no_face_low_confidence'
+                      ? () => openSupportStep()
+                      : undefined
+                }
+                onDismissed={dismissAdaptiveNoticeForCurrentStep}
+              />
+            </div>
           ) : null}
+
+          <div className={styles.stepStatusBar}>
+            <div className={styles.stepStatusText}>
+              <strong>{footerNoticeTitle}</strong>
+              <p>{footerNoticeBody}</p>
+            </div>
+            <span className={styles.stepStatusCount}>
+              {currentStep
+                ? t('learner.session.flow.currentStepSummary', 'Step {current} of {total}', {
+                    current: currentStepIndex + 1,
+                    total: lessonSteps.length,
+                  })
+                : t('layout.pageMeta.sessionTitle')}
+            </span>
+          </div>
 
           <footer className={styles.navigationBar}>
             <button
@@ -1384,19 +1457,6 @@ export default function SessionPage() {
               {t('common.previous')}
             </button>
 
-            <div className={styles.navigationCenter}>
-              <span>
-                {currentStep
-                  ? t('learner.session.flow.currentStepSummary', 'Step {current} of {total}', {
-                      current: currentStepIndex + 1,
-                      total: lessonSteps.length,
-                    })
-                  : t('layout.pageMeta.sessionTitle')}
-              </span>
-              <strong>{footerNoticeTitle}</strong>
-              <p>{footerNoticeBody}</p>
-            </div>
-
             <button
               className="btn btn-primary"
               type="button"
@@ -1408,6 +1468,18 @@ export default function SessionPage() {
             </button>
           </footer>
         </main>
+
+        {adaptiveExperienceEnabled ? (
+          <LearnerEmotionPanel
+            videoRef={videoRef}
+            cameraEnabled={cameraEnabled}
+            onToggleCamera={() => setCameraEnabled((on) => !on)}
+            emotionState={currentState}
+            confidence={emotionConfidence}
+            diagnostics={emotionDiagnostics}
+            streamReady={streamReady}
+          />
+        ) : null}
       </div>
     </div>
   );

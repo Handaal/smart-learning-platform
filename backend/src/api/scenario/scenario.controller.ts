@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
+import { writeFile } from 'fs/promises';
+import path from 'path';
 import { prisma } from '../../lib/prisma';
+import { uploadsDir, ensureUploadsDir } from '../../lib/uploads';
 import type { AffectState } from '@prisma/client';
 import { sanitizeQuizForLearner } from '../quiz/quiz.controller';
 import {
@@ -61,6 +65,14 @@ function asString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+// Optional free-text lesson field: undefined = leave unchanged, '' → null, else trimmed string.
+function parseOptionalText(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed ? trimmed : null;
+}
+
 function parseOutlineUnits(value: unknown): OutlineUnit[] {
   if (!Array.isArray(value)) return [];
 
@@ -117,6 +129,8 @@ export async function listModules(req: Request, res: Response, next: NextFunctio
             objectives: true,
             sequenceOrder: true,
             expectedDurationMin: true,
+            generalObjective: true,
+            teacherGuidance: true,
             emotionalTriggerExpected: true,
             lessonType: true,
             status: true,
@@ -267,6 +281,25 @@ export async function getScenarioProgress(req: Request, res: Response, next: Nex
       include: { module: { select: { title: true, sequenceOrder: true, primaryCompetency: true } } },
     });
     res.json({ data: progress });
+  } catch (e) { next(e); }
+}
+
+export async function uploadContentFile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const buffer = req.body;
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+      return res.status(400).json({ error: 'No PDF file was received.' });
+    }
+    // Basic magic-number check so only real PDFs land on disk.
+    if (buffer.subarray(0, 5).toString('latin1') !== '%PDF-') {
+      return res.status(400).json({ error: 'The uploaded file is not a valid PDF.' });
+    }
+
+    ensureUploadsDir();
+    const fileName = `${randomUUID()}.pdf`;
+    await writeFile(path.join(uploadsDir, fileName), buffer);
+
+    res.status(201).json({ data: { url: `/uploads/${fileName}`, fileName } });
   } catch (e) { next(e); }
 }
 
@@ -432,6 +465,8 @@ export async function createEpisode(req: Request, res: Response, next: NextFunct
       sequenceOrder,
       baseScaffold,
       expectedDurationMin,
+      generalObjective,
+      teacherGuidance,
       emotionalTriggerExpected,
       lessonType,
       status,
@@ -453,6 +488,8 @@ export async function createEpisode(req: Request, res: Response, next: NextFunct
           sequenceOrder: sequenceOrder || 0,
           baseScaffold,
           expectedDurationMin,
+          generalObjective: parseOptionalText(generalObjective) ?? null,
+          teacherGuidance: parseOptionalText(teacherGuidance) ?? null,
           emotionalTriggerExpected: parseExpectedAffect(emotionalTriggerExpected),
           lessonType: typeof lessonType === 'string' && lessonType.trim() ? lessonType.trim() : 'guided',
           status: parsedStatus,
@@ -497,6 +534,8 @@ export async function updateEpisode(req: Request, res: Response, next: NextFunct
       sequenceOrder,
       baseScaffold,
       expectedDurationMin,
+      generalObjective,
+      teacherGuidance,
       emotionalTriggerExpected,
       lessonType,
       status,
@@ -522,6 +561,8 @@ export async function updateEpisode(req: Request, res: Response, next: NextFunct
           sequenceOrder,
           baseScaffold,
           expectedDurationMin,
+          generalObjective: parseOptionalText(generalObjective),
+          teacherGuidance: parseOptionalText(teacherGuidance),
           emotionalTriggerExpected: parseExpectedAffect(emotionalTriggerExpected),
           lessonType: lessonType ? String(lessonType).trim() : undefined,
           status: parsedStatus,

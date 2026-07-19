@@ -21,7 +21,7 @@
 .outlineSection {
   border-radius: 24px;
   border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -32,7 +32,7 @@
   background:
     radial-gradient(circle at top right, rgba(18, 148, 139, 0.1), transparent 34%),
     radial-gradient(circle at bottom left, rgba(31, 111, 176, 0.09), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 244, 0.98));
+    linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .headerTop,
@@ -117,7 +117,7 @@
   height: 8px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(36, 49, 63, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
 }
 
 .progressFill {
@@ -129,6 +129,15 @@
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+}
+
+/* When the live emotion panel is present, the lesson content keeps the wide
+   primary column and the camera panel sits in a fixed side track. In RTL this
+   second track lands on the visual left, matching the requested placement. */
+.layoutWithPanel {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  gap: 16px;
+  align-items: start;
 }
 
 .main {
@@ -178,7 +187,7 @@
 .telemetryNote {
   border-radius: 20px;
   border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--color-surface);
 }
 
 .stepStateCard,
@@ -189,27 +198,27 @@
 }
 
 .stepStateneutral {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 251, 255, 0.96));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .stepStatesuccess {
   border-color: rgba(20, 129, 91, 0.18);
-  background: linear-gradient(180deg, rgba(243, 251, 248, 0.98), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .stepStatewarning {
   border-color: rgba(191, 122, 22, 0.2);
-  background: linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .stepStatesupport {
   border-color: rgba(18, 148, 139, 0.2);
-  background: linear-gradient(180deg, rgba(240, 250, 248, 0.98), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .stepStateinfo {
   border-color: rgba(31, 111, 176, 0.2);
-  background: linear-gradient(180deg, rgba(244, 249, 255, 0.98), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface));
 }
 
 .stepStateHeader {
@@ -255,8 +264,8 @@
   gap: 6px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(36, 49, 63, 0.08);
+  background: var(--color-surface);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
 }
 
 .stepStateBlock span {
@@ -311,26 +320,45 @@
 .navigationBar {
   padding: 14px;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   position: static;
 }
 
-.navigationCenter {
-  display: grid;
-  gap: 4px;
-  text-align: center;
-  min-width: 200px;
+.stepStatusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-2);
 }
 
-.navigationCenter strong {
+.stepStatusText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stepStatusText strong {
   font-size: 0.92rem;
 }
 
-.navigationCenter p {
+.stepStatusText p {
   margin: 0;
   color: var(--color-text-2);
-  line-height: 1.55;
+  font-size: 0.86rem;
+  line-height: 1.5;
   max-width: none;
+}
+
+.stepStatusCount {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-3);
+  white-space: nowrap;
 }
 
 .quizGuard {
@@ -342,7 +370,7 @@
   border-radius: 999px;
   border: 1px solid rgba(201, 137, 26, 0.28);
   background: rgba(201, 137, 26, 0.1);
-  color: #805616;
+  color: var(--color-amber);
   font-size: 0.82rem;
   font-weight: 700;
 }
@@ -359,7 +387,7 @@
   padding: 24px;
   border-radius: 20px;
   border: 1px dashed var(--color-border);
-  background: rgba(255, 255, 255, 0.84);
+  background: var(--color-surface);
   text-align: center;
 }
 
@@ -408,7 +436,7 @@
   width: 100%;
   border: 1px solid var(--color-border-soft);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--color-surface);
   text-align: left;
   padding: 10px 12px;
   cursor: pointer;
@@ -431,7 +459,7 @@
 .lessonItemLocked,
 .stepItemLocked {
   opacity: 0.62;
-  background: rgba(245, 245, 245, 0.92);
+  background: var(--color-surface);
 }
 
 .lessonItem strong,
@@ -445,7 +473,7 @@
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  background: rgba(36, 49, 63, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   color: var(--color-text);
   font-weight: 700;
   display: grid;
@@ -489,6 +517,10 @@
 }
 
 @media (max-width: 980px) {
+  .layoutWithPanel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .headerMain,
   .stepHeader,
   .stepStateHeader,
@@ -528,5 +560,74 @@
 
   .completionHead {
     align-items: flex-start;
+  }
+}
+
+/* Per-emotion adaptive surface docking — the single suggestion surface takes a
+   different shape + screen position depending on the emotion result's uiShape. */
+.adaptiveDock {
+  position: fixed;
+  z-index: 120;
+  width: min(420px, calc(100vw - 32px));
+  max-height: 82vh;
+  overflow: auto;
+}
+
+.dock_side_panel {
+  inset-inline-end: 20px;
+  top: 96px;
+}
+
+.dock_information_window {
+  inset-inline-end: 20px;
+  top: 88px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.dock_advanced_path {
+  inset-inline-end: 20px;
+  bottom: 96px;
+}
+
+/* Centered docks use physical `left` (not the logical inset-inline-start) so the
+   translateX(-50%) centering stays correct in RTL as well as LTR. */
+.dock_mini_task_strip {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 88px;
+  width: min(680px, calc(100vw - 32px));
+}
+
+.dock_popup_card {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+}
+
+.dock_operational_safety_protocol {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 12px;
+  width: min(680px, calc(100vw - 32px));
+}
+
+.dock_standard_path {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .adaptiveDock,
+  .dock_side_panel,
+  .dock_information_window,
+  .dock_advanced_path,
+  .dock_mini_task_strip,
+  .dock_popup_card,
+  .dock_operational_safety_protocol {
+    inset-inline: 12px;
+    transform: none;
+    width: auto;
+    top: auto;
+    bottom: 16px;
   }
 }

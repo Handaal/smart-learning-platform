@@ -19,6 +19,24 @@
   --color-amber: #c9891a;
   --color-amber-soft: rgba(201, 137, 26, 0.12);
 
+  /* Contrasting section-identity accents (cool plum + warm rose) */
+  --color-violet: #6a4fa3;
+  --color-violet-soft: rgba(106, 79, 163, 0.12);
+  --color-rose: #bb5a86;
+  --color-rose-soft: rgba(187, 90, 134, 0.12);
+
+  /* Vivid contrast pops — warm terracotta + cool periwinkle-indigo.
+     These complement the teal base and break the single-hue feel. */
+  --color-coral: #d96a4a;
+  --color-coral-soft: rgba(217, 106, 74, 0.13);
+  --color-indigo: #5b6cc6;
+  --color-indigo-soft: rgba(91, 108, 198, 0.13);
+
+  /* Multi-hue surface gradients for heroes & feature panels. */
+  --gradient-brand: linear-gradient(135deg, rgba(18, 148, 139, 0.16), rgba(91, 108, 198, 0.14) 55%, rgba(217, 106, 74, 0.12));
+  --gradient-warm: linear-gradient(135deg, rgba(217, 106, 74, 0.16), rgba(201, 137, 26, 0.12));
+  --gradient-cool: linear-gradient(135deg, rgba(91, 108, 198, 0.16), rgba(18, 148, 139, 0.12));
+
   --color-success: #14815b;
   --color-success-soft: rgba(20, 129, 91, 0.12);
   --color-warning: #c9891a;
@@ -32,6 +50,11 @@
   --affect-boredom: #8a948d;
   --affect-neutral: #6f7c75;
 
+  /* Neutral overlay RGB — a dark ink tint on light surfaces, flipped to a light
+     tint in dark mode. Used as rgba(var(--overlay-rgb), <alpha>) so each call
+     keeps its own opacity (progress tracks, row hovers, chip fills, dividers). */
+  --overlay-rgb: 36, 49, 63;
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 18px;
@@ -42,8 +65,8 @@
   --shadow-lg: 0 20px 48px rgba(63, 41, 16, 0.16);
   --shadow-glow: 0 0 24px var(--color-accent-glow);
 
-  --font-sans: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', sans-serif;
-  --font-heading: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', sans-serif;
+  --font-sans: 'Cairo', 'Segoe UI', sans-serif;
+  --font-heading: 'Cairo', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   --space-1: 4px;
@@ -54,7 +77,9 @@
   --space-6: 24px;
   --space-7: 28px;
   --space-8: 32px;
+  --space-9: 36px;
   --space-10: 40px;
+  --space-11: 44px;
   --space-12: 48px;
 
   --transition-fast: 150ms ease;
@@ -62,8 +87,61 @@
   --transition-slow: 400ms ease;
 
   --content-max: 920px;
-  --sidebar-width: 292px;
-  --header-height: 88px;
+  --sidebar-width: 280px;
+  --header-height: 72px;
+}
+
+/* Dark theme — re-maps the surface/border/text tokens that every component
+   consumes, so the whole site recolors without per-module edits. Accent and
+   affect hues stay roughly the same (brightened slightly for contrast). */
+html[data-theme='dark'] {
+  --color-bg: #0e1419;
+  --color-surface: rgba(24, 32, 40, 0.94);
+  --color-surface-2: #161e26;
+  --color-surface-3: #202a34;
+  --color-border: #2c3946;
+  --color-border-soft: #232f3a;
+
+  --color-text: #e8eef3;
+  --color-text-2: #aab6bf;
+  --color-text-3: #7b8893;
+
+  --color-accent: #16a394;
+  --color-accent-2: #1fb9ab;
+  --color-accent-glow: rgba(31, 185, 171, 0.22);
+  --color-accent-blue: #4f9fe0;
+  --color-accent-blue-soft: rgba(79, 159, 224, 0.16);
+
+  --color-amber: #e0a23a;
+  --color-amber-soft: rgba(224, 162, 58, 0.16);
+
+  --color-violet: #9a82d6;
+  --color-violet-soft: rgba(154, 130, 214, 0.16);
+  --color-rose: #d97aa6;
+  --color-rose-soft: rgba(217, 122, 166, 0.16);
+  --color-coral: #e88a6c;
+  --color-coral-soft: rgba(232, 138, 108, 0.16);
+  --color-indigo: #8593e0;
+  --color-indigo-soft: rgba(133, 147, 224, 0.16);
+
+  --gradient-brand: linear-gradient(135deg, rgba(31, 185, 171, 0.18), rgba(133, 147, 224, 0.16) 55%, rgba(232, 138, 108, 0.14));
+  --gradient-warm: linear-gradient(135deg, rgba(232, 138, 108, 0.18), rgba(224, 162, 58, 0.14));
+  --gradient-cool: linear-gradient(135deg, rgba(133, 147, 224, 0.18), rgba(31, 185, 171, 0.14));
+
+  --color-success: #1fb988;
+  --color-success-soft: rgba(31, 185, 136, 0.16);
+  --color-warning: #e0a23a;
+  --color-error: #e87264;
+  --color-error-soft: rgba(232, 114, 100, 0.16);
+
+  --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 14px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 24px var(--color-accent-glow);
+
+  --overlay-rgb: 255, 255, 255;
+
+  color-scheme: dark;
 }
 
 *, *::before, *::after {
@@ -73,7 +151,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 15px;
   scroll-behavior: smooth;
 }
 
@@ -89,14 +167,24 @@ body {
   min-height: 100vh;
   font-family: var(--font-sans);
   color: var(--color-text);
-  line-height: 1.65;
+  font-size: 0.92rem;
+  line-height: 1.55;
   background:
     radial-gradient(circle at top right, rgba(18, 148, 139, 0.12), transparent 28%),
-    radial-gradient(circle at bottom left, rgba(31, 111, 176, 0.08), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(91, 108, 198, 0.09), transparent 24%),
+    radial-gradient(circle at 12% 8%, rgba(217, 106, 74, 0.07), transparent 20%),
     var(--color-bg);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   text-align: start;
+}
+
+html[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at top right, rgba(31, 185, 171, 0.14), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(133, 147, 224, 0.12), transparent 26%),
+    radial-gradient(circle at 12% 8%, rgba(232, 138, 108, 0.08), transparent 22%),
+    var(--color-bg);
 }
 
 body[data-language='en'] {
@@ -105,8 +193,8 @@ body[data-language='en'] {
 }
 
 body[data-language='ar'] {
-  --font-sans: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', sans-serif;
-  --font-heading: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', sans-serif;
+  --font-sans: 'Cairo', 'Segoe UI', sans-serif;
+  --font-heading: 'Cairo', 'Segoe UI', sans-serif;
 }
 
 #root {
@@ -139,29 +227,29 @@ h4,
 h5,
 h6 {
   font-family: var(--font-heading);
-  line-height: 1.22;
+  line-height: 1.25;
   color: var(--color-text);
 }
 
 h1 {
-  font-size: clamp(1.75rem, 3.6vw, 2.6rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-
-h2 {
-  font-size: clamp(1.35rem, 2.8vw, 1.95rem);
+  font-size: clamp(1.3rem, 2vw, 1.6rem);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
+h2 {
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
 h3 {
-  font-size: 1.18rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 
 h4 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -216,7 +304,7 @@ code {
 .card-elevated {
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-  padding: clamp(16px, 2vw, 24px);
+  padding: clamp(14px, 1.6vw, 20px);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -278,7 +366,7 @@ code {
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: rgba(36, 49, 63, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--color-text);
 }
 
@@ -308,6 +396,10 @@ code {
 
 .input {
   width: 100%;
+  /* Allow the control to shrink inside flex/grid tracks instead of forcing
+     overflow (intrinsic input/select width would otherwise push the page wide). */
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   padding: 11px 14px;
   border-radius: 14px;
@@ -316,6 +408,21 @@ code {
   color: var(--color-text);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
   outline: none;
+}
+
+html[data-theme='dark'] .input {
+  background: rgba(20, 27, 34, 0.9);
+}
+
+html[data-theme='dark'] .btn-secondary:hover:not(:disabled) {
+  background: var(--color-surface-3);
+}
+
+html[data-theme='dark'] .status-panel,
+html[data-theme='dark'] .empty-panel,
+html[data-theme='dark'] .loading-panel,
+html[data-theme='dark'] .surface-subtle {
+  background: rgba(20, 27, 34, 0.6);
 }
 
 .input::placeholder {
@@ -365,11 +472,15 @@ textarea.input {
 .badge-soft-teal { background: rgba(18, 148, 139, 0.12); color: var(--color-accent); }
 .badge-soft-amber { background: rgba(201, 137, 26, 0.12); color: var(--color-amber); }
 .badge-soft-red { background: rgba(212, 93, 76, 0.12); color: var(--color-error); }
+.badge-violet { background: var(--color-violet-soft); color: var(--color-violet); }
+.badge-rose { background: var(--color-rose-soft); color: var(--color-rose); }
+.badge-coral { background: var(--color-coral-soft); color: var(--color-coral); }
+.badge-indigo { background: var(--color-indigo-soft); color: var(--color-indigo); }
 
 .progress-track {
   width: 100%;
   height: 8px;
-  background: rgba(36, 49, 63, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -504,7 +615,7 @@ textarea.input {
 
 @media (max-width: 640px) {
   html {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .card,

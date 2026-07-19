@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, CheckCircle2, ChevronRight, Clock, Lock, Play, Target, Zap } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronRight, Clock, Lock, Play, Target } from 'lucide-react';
 import { scenarioApi, sessionApi } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
+import StatusBadge, { type BadgeStatus } from '@/components/ui/StatusBadge';
+import EmptyState from '@/components/ui/EmptyState';
+import Skeleton from '@/components/ui/Skeleton';
 import styles from './ModulesPage.module.css';
 
 export default function ModulesPage() {
@@ -55,7 +58,22 @@ export default function ModulesPage() {
     return t('learner.modules.hints.start', 'This unit is ready when you are.');
   }
 
-  if (isLoading) return <div className={styles.loading}>{t('learner.modules.loading')}</div>;
+  function badgeStatus(status: string, locked: boolean): BadgeStatus {
+    if (locked) return 'locked';
+    if (status === 'complete') return 'complete';
+    if (status === 'in_progress') return 'in_progress';
+    return 'ready';
+  }
+
+  if (isLoading) {
+    return (
+      <div className={styles.page}>
+        <div className="card"><Skeleton variant="line" lines={3} /></div>
+        <div className="card"><Skeleton variant="line" lines={3} /></div>
+        <div className="card"><Skeleton variant="line" lines={3} /></div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -82,6 +100,13 @@ export default function ModulesPage() {
         </div>
       </div>
 
+      {moduleRows.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title={t('learner.modules.empty.title', 'No units available yet')}
+          hint={t('learner.modules.empty.hint', 'Your learning units will appear here once they are published.')}
+        />
+      ) : (
       <div className={styles.grid}>
         {moduleRows.map((module: any, index: number) => {
           const currentProgress = progressMap[module.id];
@@ -109,17 +134,10 @@ export default function ModulesPage() {
 
               <div className={styles.info}>
                 <div className={styles.cardTop}>
-                  <span
-                    className={`badge ${
-                      status === 'complete'
-                        ? 'badge-success'
-                        : status === 'in_progress'
-                          ? 'badge-teal'
-                          : 'badge-muted'
-                    }`}
-                  >
-                    {status === 'complete' ? <><CheckCircle2 size={11} /> {statusLabel(status)}</> : status === 'in_progress' ? <><Zap size={11} /> {statusLabel(status)}</> : statusLabel(status)}
-                  </span>
+                  <StatusBadge
+                    status={badgeStatus(status, isLocked)}
+                    label={isLocked ? t('learner.modules.buttons.locked') : statusLabel(status)}
+                  />
                 </div>
 
                 <h3 className={styles.title}>{module.title}</h3>
@@ -180,6 +198,7 @@ export default function ModulesPage() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

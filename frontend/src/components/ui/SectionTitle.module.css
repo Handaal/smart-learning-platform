@@ -34,6 +34,26 @@
   color: var(--color-success);
 }
 
+.toneViolet {
+  background: var(--color-violet-soft);
+  color: var(--color-violet);
+}
+
+.toneRose {
+  background: var(--color-rose-soft);
+  color: var(--color-rose);
+}
+
+.toneCoral {
+  background: var(--color-coral-soft);
+  color: var(--color-coral);
+}
+
+.toneIndigo {
+  background: var(--color-indigo-soft);
+  color: var(--color-indigo);
+}
+
 .copy {
   display: grid;
   gap: 2px;

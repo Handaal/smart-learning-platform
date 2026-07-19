@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import ExcelJS from 'exceljs';
 import { prisma } from '../../lib/prisma';
 import { toJsonSafe } from '../../lib/json';
 import { CompetencyTracker } from '../../services/CompetencyTracker';
@@ -1358,5 +1359,150 @@ export async function exportMergedAnalytics(_req: Request, res: Response, next: 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="step_merged_ml_dataset.csv"');
     res.send(toCSV(rows));
+  } catch (e) { next(e); }
+}
+
+// ── Pre/Post assessment results (per learner) ─────────────────
+
+function parseAssessmentForm(raw: unknown): 'pre' | 'post' {
+  return raw === 'post' ? 'post' : 'pre';
+}
+
+async function fetchAssessmentResults(form: 'pre' | 'post') {
+  return prisma.assessment.findMany({
+    where: { form, isComplete: true },
+    orderBy: { submittedAt: 'desc' },
+    include: {
+      learner: { select: { participantId: true, cohort: true } },
+    },
+  });
+}
+
+export async function assessmentResults(req: Request, res: Response, next: NextFunction) {
+  try {
+    const form = parseAssessmentForm(req.query.form);
+    const records = await fetchAssessmentResults(form);
+
+    const rows = records.map((record) => ({
+      assessmentId: record.id,
+      participantId: record.learner.participantId,
+      cohort: record.learner.cohort,
+      scoreS1: record.scoreS1,
+      scoreS2: record.scoreS2,
+      scoreS3: record.scoreS3,
+      scoreS4: record.scoreS4,
+      scoreS5: record.scoreS5,
+      totalScore: record.totalScore,
+      correctCount: record.correctCount,
+      questionCount: record.questionCount,
+      submittedAt: record.submittedAt,
+    }));
+
+    const cohortMean = (cohort: string) => {
+      const scores = rows
+        .filter((row) => row.cohort === cohort && typeof row.totalScore === 'number')
+        .map((row) => Number(row.totalScore));
+      if (!scores.length) return null;
+      return scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    };
+
+    res.json({
+      data: toJsonSafe(rows),
+      meta: {
+        form,
+        totalTakers: rows.length,
+        experimentalMean: cohortMean('experimental'),
+        controlMean: cohortMean('control'),
+      },
+    });
+  } catch (e) { next(e); }
+}
+
+export async function exportAssessmentResultsXlsx(req: Request, res: Response, next: NextFunction) {
+  try {
+    const form = parseAssessmentForm(req.query.form);
+    const records = await fetchAssessmentResults(form);
+    const formLabel = form === 'pre' ? 'Pre-test' : 'Post-test';
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'STEP Platform';
+
+    const resultsSheet = workbook.addWorksheet('Results');
+    resultsSheet.columns = [
+      { header: 'Participant ID', key: 'participantId', width: 24 },
+      { header: 'Group', key: 'cohort', width: 14 },
+      { header: 'S1 Scoping (0-4)', key: 'scoreS1', width: 16 },
+      { header: 'S2 Planning (0-4)', key: 'scoreS2', width: 16 },
+      { header: 'S3 Communication (0-4)', key: 'scoreS3', width: 20 },
+      { header: 'S4 Risk (0-4)', key: 'scoreS4', width: 14 },
+      { header: 'S5 Decisions (0-4)', key: 'scoreS5', width: 17 },
+      { header: 'Total Score (%)', key: 'totalScore', width: 15 },
+      { header: 'Correct', key: 'correctCount', width: 10 },
+      { header: 'Questions', key: 'questionCount', width: 11 },
+      { header: 'Submitted At', key: 'submittedAt', width: 22 },
+    ];
+    resultsSheet.getRow(1).font = { bold: true };
+
+    for (const record of records) {
+      resultsSheet.addRow({
+        participantId: record.learner.participantId,
+        cohort: record.learner.cohort,
+        scoreS1: record.scoreS1,
+        scoreS2: record.scoreS2,
+        scoreS3: record.scoreS3,
+        scoreS4: record.scoreS4,
+        scoreS5: record.scoreS5,
+        totalScore: record.totalScore,
+        correctCount: record.correctCount,
+        questionCount: record.questionCount,
+        submittedAt: record.submittedAt ?? undefined,
+      });
+    }
+
+    const answersSheet = workbook.addWorksheet('Answers');
+    answersSheet.columns = [
+      { header: 'Participant ID', key: 'participantId', width: 24 },
+      { header: 'Group', key: 'cohort', width: 14 },
+      { header: 'Question', key: 'questionText', width: 60 },
+      { header: 'Dimension', key: 'dimension', width: 11 },
+      { header: 'Selected Answer', key: 'selectedChoiceText', width: 40 },
+      { header: 'Correct Answer', key: 'correctChoiceText', width: 40 },
+      { header: 'Is Correct', key: 'isCorrect', width: 11 },
+    ];
+    answersSheet.getRow(1).font = { bold: true };
+
+    for (const record of records) {
+      const payload = record.responsePayload as { answers?: unknown[] } | null;
+      const answers = Array.isArray(payload?.answers) ? payload!.answers! : [];
+      for (const entry of answers) {
+        const answer = (entry ?? {}) as Record<string, unknown>;
+        answersSheet.addRow({
+          participantId: record.learner.participantId,
+          cohort: record.learner.cohort,
+          questionText: answer.questionText ?? answer.questionId ?? '',
+          dimension: answer.dimension ?? '',
+          selectedChoiceText: answer.selectedChoiceText ?? '',
+          correctChoiceText: answer.correctChoiceText ?? '',
+          isCorrect: answer.isCorrect === true ? 'yes' : 'no',
+        });
+      }
+    }
+
+    const fileName = form === 'pre' ? 'step_pretest_results.xlsx' : 'step_posttest_results.xlsx';
+    await researchLedger.logResearchExport({
+      exportType: `assessment_results_${form}`,
+      exportFormat: 'xlsx',
+      requestedBy: req.user?.sub ?? null,
+      fileName,
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('X-Export-Label', `${formLabel} results`);
+    res.send(Buffer.from(buffer));
   } catch (e) { next(e); }
 }

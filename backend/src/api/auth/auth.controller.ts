@@ -3,10 +3,11 @@ import * as svc from './auth.service';
 import { z } from 'zod';
 
 const RegisterSchema = z.object({
-  participantId: z.string().min(4).max(32).optional(),
+  participantId: z.string().min(3).max(32).optional(),
   password: z.string().min(8).max(100),
   cohort:        z.enum(['experimental', 'control']),
   role:          z.enum(['learner', 'research_admin', 'researcher', 'admin']).default('learner'),
+  consentAccepted: z.boolean().optional(),
 });
 
 const LoginSchema = z.object({

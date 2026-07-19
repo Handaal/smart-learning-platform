@@ -9,6 +9,7 @@ import {
   normalizeParticipantId,
 } from '../../lib/participantId';
 import { AppError } from '../../middleware/errorHandler';
+import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
 import type { CohortType, UserRole } from '../../types';
 
 const JWT_SECRET          = process.env.JWT_SECRET!;
@@ -21,6 +22,7 @@ interface RegisterInput {
   password: string;
   cohort: CohortType;
   role: UserRole | 'researcher' | 'admin';
+  consentAccepted?: boolean;
 }
 
 function normalizeUserRole(role?: UserRole | 'researcher' | 'admin' | null): UserRole {
@@ -48,6 +50,15 @@ function signRefresh() {
 
 export async function register(input: RegisterInput) {
   const normalizedRole = normalizeUserRole(input.role);
+
+  if (normalizedRole === 'learner' && input.consentAccepted !== true) {
+    throw new AppError(
+      400,
+      'Research consent must be accepted before creating an account.',
+      'CONSENT_REQUIRED',
+    );
+  }
+
   const participantId = input.participantId
     ? normalizeParticipantId(input.participantId)
     : generateParticipantId(normalizedRole === 'research_admin' ? 'RADMIN' : 'PHD');
@@ -55,7 +66,7 @@ export async function register(input: RegisterInput) {
   if (!isValidParticipantId(participantId)) {
     throw new AppError(
       400,
-      'Participant ID must be a secure fixed 20-character identifier.',
+      'Participant ID must contain 3 to 32 letters or numbers.',
       'INVALID_PARTICIPANT_ID',
     );
   }
@@ -66,13 +77,31 @@ export async function register(input: RegisterInput) {
   if (existing) throw new AppError(409, 'Participant ID already registered', 'DUPLICATE_ID');
 
   const learner = await prisma.learner.create({
-    data: { participantId, cohort: input.cohort as any, role: normalizedRole as any },
+    data: {
+      participantId,
+      cohort: input.cohort as any,
+      role: normalizedRole as any,
+      isActive: normalizedRole === 'research_admin',
+    },
   });
 
   const hash = await bcrypt.hash(input.password, 12);
   await prisma.authCredential.create({
     data: { learnerId: learner.id, passwordHash: hash },
   });
+
+  if (normalizedRole === 'learner') {
+    await prisma.consentRecord.create({
+      data: {
+        learnerId: learner.id,
+        consentVersion: '2.0-registration',
+        participation: true,
+        performanceData: true,
+        behavioralTracking: true,
+        facialAnalysis: input.cohort === 'experimental',
+      },
+    });
+  }
 
   return { learnerId: learner.id, participantId: learner.participantId };
 }
@@ -176,8 +205,14 @@ export async function getMe(learnerId: string) {
     },
   });
   if (!learner) throw new AppError(404, 'Learner not found', 'NOT_FOUND');
+  const access = await resolveLearnerAccessSnapshot(learnerId);
   return {
     ...learner,
     role: normalizeUserRole((learner as any).role ?? inferRoleFromParticipantId(learner.participantId)),
+    isActive: access.isActive,
+    groupLabel: access.groupLabel,
+    groupEmotionTrackingEnabled: access.groupEmotionTrackingEnabled,
+    emotionTrackingOverride: access.emotionTrackingOverride,
+    emotionTrackingEnabled: access.emotionTrackingEnabled,
   };
 }

@@ -1,0 +1,81 @@
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.toneTeal {
+  background: rgba(18, 148, 139, 0.12);
+  color: var(--color-accent-2);
+}
+
+.toneBlue {
+  background: rgba(31, 111, 176, 0.12);
+  color: var(--color-accent-blue);
+}
+
+.toneAmber {
+  background: rgba(201, 137, 26, 0.14);
+  color: var(--color-amber);
+}
+
+.toneSuccess {
+  background: rgba(20, 129, 91, 0.14);
+  color: var(--color-success);
+}
+
+.toneViolet {
+  background: var(--color-violet-soft);
+  color: var(--color-violet);
+}
+
+.toneRose {
+  background: var(--color-rose-soft);
+  color: var(--color-rose);
+}
+
+.toneCoral {
+  background: var(--color-coral-soft);
+  color: var(--color-coral);
+}
+
+.toneIndigo {
+  background: var(--color-indigo-soft);
+  color: var(--color-indigo);
+}
+
+.body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.label {
+  font-size: 0.82rem;
+  color: var(--color-text-2);
+  line-height: 1.35;
+}
+
+.hint {
+  font-size: 0.74rem;
+  color: var(--color-text-3);
+  line-height: 1.35;
+}

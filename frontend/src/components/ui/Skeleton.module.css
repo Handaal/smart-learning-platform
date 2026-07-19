@@ -1,0 +1,62 @@
+.shimmer {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: rgba(var(--overlay-rgb), 0.07);
+  border-radius: var(--radius-md);
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  animation: skeleton-sweep 1.3s ease-in-out infinite;
+}
+
+:global([dir='rtl']) .shimmer::after {
+  animation-name: skeleton-sweep-rtl;
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-sweep-rtl {
+  100% {
+    transform: translateX(-200%);
+  }
+}
+
+.lines {
+  display: grid;
+  gap: 10px;
+}
+
+.line {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.block {
+  height: 80px;
+}
+
+.card {
+  height: 120px;
+  border-radius: var(--radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::after {
+    animation: none;
+  }
+}

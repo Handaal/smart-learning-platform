@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import * as svc from './learner.service';
 import { AppError } from '../../middleware/errorHandler';
+import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
 
 // Ensure learner can only access their own data (unless researcher/admin)
 function assertOwnership(req: Request, targetId: string) {
@@ -30,6 +31,15 @@ const ConsentSchema = z.object({
   dataOpenDataset:     z.boolean().default(false),
   followupContact:     z.boolean().default(false),
   dataRetentionYears:  z.number().int().min(1).max(10).default(5),
+});
+
+const CohortToggleSchema = z.object({
+  emotionTrackingEnabled: z.boolean(),
+});
+
+const LearnerAdminUpdateSchema = z.object({
+  isActive: z.boolean().optional(),
+  emotionTrackingOverride: z.boolean().nullable().optional(),
 });
 
 export async function getProfile(req: Request, res: Response, next: NextFunction) {
@@ -61,11 +71,13 @@ export async function recordConsent(req: Request, res: Response, next: NextFunct
   try {
     assertOwnership(req, req.params.id);
     const body = ConsentSchema.parse(req.body);
+    const access = await resolveLearnerAccessSnapshot(req.params.id);
     const normalizedBody =
-      req.user?.cohort === 'control'
+      !access.emotionTrackingEnabled
         ? {
             ...body,
-            // Control-group learners use the standard non-camera experience.
+            // If emotion tracking is disabled for the learner, consent falls
+            // back to the standard non-camera experience.
             facialAnalysis: false,
           }
         : body;
@@ -96,6 +108,40 @@ export async function listLearners(req: Request, res: Response, next: NextFuncti
     const limit = Number(req.query.limit ?? 50);
     const cohort = req.query.cohort as string | undefined;
     const result = await svc.listLearners({ page, limit, cohort });
+    res.json({ data: result });
+  } catch (e) { next(e); }
+}
+
+export async function getAdminOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await svc.getAdminOverview();
+    res.json({ data: result });
+  } catch (e) { next(e); }
+}
+
+export async function updateCohortEmotionTracking(req: Request, res: Response, next: NextFunction) {
+  try {
+    const cohort = z.enum(['experimental', 'control']).parse(req.params.cohort);
+    const body = CohortToggleSchema.parse(req.body);
+    const result = await svc.updateCohortEmotionTracking(cohort, body.emotionTrackingEnabled);
+    res.json({ data: result });
+  } catch (e) { next(e); }
+}
+
+export async function updateLearnerAdminSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const body = LearnerAdminUpdateSchema.parse(req.body);
+    if (!Object.keys(body).length) {
+      throw new AppError(400, 'No admin changes were provided', 'INVALID_UPDATE');
+    }
+    const result = await svc.updateLearnerAdminSettings(req.params.id, body);
+    res.json({ data: result });
+  } catch (e) { next(e); }
+}
+
+export async function deleteLearnerAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await svc.deleteLearnerAccount(req.params.id);
     res.json({ data: result });
   } catch (e) { next(e); }
 }

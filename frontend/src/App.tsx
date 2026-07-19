@@ -1,39 +1,43 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { allowUnitsBeforePretest } from '@/features/learnerJourney';
 import { useAuthStore } from '@/store/authStore';
 import { useLearnerJourney } from '@/hooks/useLearnerJourney';
+import { useI18n } from '@/i18n';
 
-// Layouts
+// Layouts (eager — needed on first paint of every route)
 import AppLayout from '@/components/layout/AppLayout';
 import AuthLayout from '@/components/layout/AuthLayout';
 import AppErrorBoundary from '@/components/feedback/AppErrorBoundary';
 
-// Auth pages
-import LoginPage from '@/pages/auth/LoginPage';
-import RegisterPage from '@/pages/auth/RegisterPage';
+// Pages are lazy-loaded so heavy dependencies (MediaPipe/face-api on the
+// session page, Recharts on research dashboards, Framer Motion in the course
+// builder) are split into their own chunks and only fetched when visited.
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 
-// Learner pages
-import DashboardPage from '@/pages/learner/DashboardPage';
-import OnboardingPage from '@/pages/learner/OnboardingPage';
-import ModulesPage from '@/pages/learner/ModulesPage';
-import SessionPage from '@/pages/learner/SessionPage';
-import ReflectionPage from '@/pages/learner/ReflectionPage';
-import AssessmentPage from '@/pages/learner/AssessmentPage';
-import PMToolsPage from '@/pages/learner/PMToolsPage';
-import AdaptiveQuizPage from '@/pages/learner/AdaptiveQuizPage';
-import LearnerHelpPage from '@/pages/learner/LearnerHelpPage';
-import FinalCompletionPage from '@/pages/learner/FinalCompletionPage';
+const DashboardPage = lazy(() => import('@/pages/learner/DashboardPage'));
+const OnboardingPage = lazy(() => import('@/pages/learner/OnboardingPage'));
+const ModulesPage = lazy(() => import('@/pages/learner/ModulesPage'));
+const SessionPage = lazy(() => import('@/pages/learner/SessionPage'));
+const ReflectionPage = lazy(() => import('@/pages/learner/ReflectionPage'));
+const AssessmentPage = lazy(() => import('@/pages/learner/AssessmentPage'));
+const PMToolsPage = lazy(() => import('@/pages/learner/PMToolsPage'));
+const AdaptiveQuizPage = lazy(() => import('@/pages/learner/AdaptiveQuizPage'));
+const LearnerHelpPage = lazy(() => import('@/pages/learner/LearnerHelpPage'));
+const FinalCompletionPage = lazy(() => import('@/pages/learner/FinalCompletionPage'));
 
-// Research Admin pages
-import ResearchAdminHome from '@/pages/researchAdmin/ResearchAdminHome';
-import ResearchDashboard from '@/pages/research/ResearchDashboard';
-import ParticipantView from '@/pages/research/ParticipantView';
-import LearnerEvalDashboard from '@/pages/research/LearnerEvalDashboard';
-import ContentControlHub from '@/pages/admin/ContentControlHub';
-import ResearchAdminHelpPage from '@/pages/researchAdmin/ResearchAdminHelpPage';
-import EmotionValidationPage from '@/pages/researchAdmin/EmotionValidationPage';
-import AdaptiveDisplayCriteriaPage from '@/pages/researchAdmin/AdaptiveDisplayCriteriaPage';
+const ResearchAdminHome = lazy(() => import('@/pages/researchAdmin/ResearchAdminHome'));
+const ResearchDashboard = lazy(() => import('@/pages/research/ResearchDashboard'));
+const ParticipantView = lazy(() => import('@/pages/research/ParticipantView'));
+const LearnerEvalDashboard = lazy(() => import('@/pages/research/LearnerEvalDashboard'));
+const CourseUnitsPage = lazy(() => import('@/pages/admin/CourseUnitsPage'));
+const UnitLessonsPage = lazy(() => import('@/pages/admin/UnitLessonsPage'));
+const ResearchAdminHelpPage = lazy(() => import('@/pages/researchAdmin/ResearchAdminHelpPage'));
+const EmotionValidationPage = lazy(() => import('@/pages/researchAdmin/EmotionValidationPage'));
+const AdaptiveDisplayCriteriaPage = lazy(() => import('@/pages/researchAdmin/AdaptiveDisplayCriteriaPage'));
+const ResearchAdminUserManagementPage = lazy(() => import('@/pages/researchAdmin/ResearchAdminUserManagementPage'));
+const ConsentSettingsPage = lazy(() => import('@/pages/researchAdmin/ConsentSettingsPage'));
 
 function parseJwtExpiry(token: string | null) {
   if (!token) return null;
@@ -111,6 +115,7 @@ function isTrainingPath(pathname: string) {
 }
 
 function resolveLearnerJourneyRedirect(stage: ReturnType<typeof useLearnerJourney>['stage'], pathname: string) {
+  const onDashboard = pathname === '/dashboard';
   const onOnboarding = pathname === '/onboarding';
   const onPreTest = pathname === '/assessment/pre';
   const onPostTest = pathname === '/assessment/post';
@@ -118,12 +123,12 @@ function resolveLearnerJourneyRedirect(stage: ReturnType<typeof useLearnerJourne
   const onAssessmentRoute = pathname.startsWith('/assessment/');
   const onHelp = isHelpPath(pathname);
 
-  if (stage === 'consent') {
-    if (onOnboarding || onHelp) return null;
-    return '/onboarding';
+  if (stage === 'pending_approval') {
+    if (onDashboard || onHelp) return null;
+    return '/dashboard';
   }
 
-  if (stage === 'setup' || stage === 'ready') {
+  if (stage === 'ready') {
     if (onOnboarding || onHelp) return null;
     return '/onboarding';
   }
@@ -156,12 +161,13 @@ function resolveLearnerJourneyRedirect(stage: ReturnType<typeof useLearnerJourne
 function LearnerJourneyBoundary({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { stage, isLoading, isError } = useLearnerJourney();
+  const { t } = useI18n();
   const redirect = resolveLearnerJourneyRedirect(stage, location.pathname);
 
   if (isLoading) {
     return (
       <div className="loading-panel route-state">
-        Loading learner journey...
+        {t('common.loadingLearnerJourney')}
       </div>
     );
   }
@@ -174,27 +180,15 @@ function LearnerJourneyBoundary({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AssessmentEntryRedirect() {
-  const { stage, isLoading } = useLearnerJourney();
-
-  if (isLoading) {
-    return (
-      <div className="loading-panel route-state route-state-sm">
-        Preparing assessment flow...
-      </div>
-    );
-  }
-
-  if (stage === 'pretest') return <Navigate to="/assessment/pre" replace />;
-  if (stage === 'posttest') return <Navigate to="/assessment/post" replace />;
-  if (stage === 'consent' || stage === 'setup' || stage === 'ready') return <Navigate to="/onboarding" replace />;
-  if (stage === 'completed') return <Navigate to="/completion" replace />;
-  return <Navigate to="/dashboard" replace />;
+function RouteFallback() {
+  const { t } = useI18n();
+  return <div className="loading-panel route-state">{t('common.loading', 'Loading...')}</div>;
 }
 
 export default function App() {
   return (
-    <Routes>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
       <Route path="/" element={<RootRedirect />} />
 
       <Route element={<AppErrorBoundary><AuthLayout /></AppErrorBoundary>}>
@@ -208,7 +202,6 @@ export default function App() {
         <Route path="/modules" element={<ModulesPage />} />
         <Route path="/session/:sessionId" element={<SessionPage />} />
         <Route path="/reflect/:sessionId" element={<ReflectionPage />} />
-        <Route path="/assessment" element={<AssessmentEntryRedirect />} />
         <Route path="/assessment/:form" element={<AssessmentPage />} />
         <Route path="/completion" element={<FinalCompletionPage />} />
         <Route path="/pm-tools" element={<PMToolsPage />} />
@@ -219,7 +212,10 @@ export default function App() {
 
       <Route element={<AppErrorBoundary><RequireResearchAdmin><AppLayout /></RequireResearchAdmin></AppErrorBoundary>}>
         <Route path="/research-admin" element={<ResearchAdminHome />} />
-        <Route path="/research-admin/course" element={<ContentControlHub />} />
+        <Route path="/research-admin/course" element={<CourseUnitsPage />} />
+        <Route path="/research-admin/course/units/:unitId" element={<UnitLessonsPage />} />
+        <Route path="/research-admin/access" element={<ResearchAdminUserManagementPage />} />
+        <Route path="/research-admin/consent" element={<ConsentSettingsPage />} />
         <Route path="/research-admin/reports" element={<ResearchDashboard />} />
         <Route path="/research-admin/emotion-validation" element={<EmotionValidationPage />} />
         <Route path="/research-admin/adaptive-display" element={<AdaptiveDisplayCriteriaPage />} />
@@ -231,11 +227,12 @@ export default function App() {
         <Route path="/research/:participantId" element={<ParticipantView />} />
         <Route path="/research/:participantId/eval" element={<LearnerEvalDashboard />} />
         <Route path="/admin" element={<Navigate to="/research-admin" replace />} />
-        <Route path="/admin/content" element={<ContentControlHub />} />
+        <Route path="/admin/content" element={<Navigate to="/research-admin/course" replace />} />
         <Route path="/admin/verify" element={<Navigate to="/research-admin" replace />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

@@ -23,6 +23,7 @@ import { MOCK_PARTICIPANT_SUMMARY, MOCK_TIMELINE_HEATMAP, USE_MOCK } from '@/ser
 import EmotionHeatmap from '@/components/research/EmotionHeatmap';
 import TimeEngagementGrid from '@/components/research/TimeEngagementGrid';
 import { RESEARCH_EMOTION_ORDER, emotionDisplayName } from '@/components/research/emotionPresentation';
+import StatCard from '@/components/ui/StatCard';
 import styles from './ParticipantView.module.css';
 
 const EMOTION_ORDER = RESEARCH_EMOTION_ORDER;
@@ -274,22 +275,14 @@ export default function ParticipantView() {
 
       <section className={styles.kpiGrid}>
         {[
-          { label: t('research.participantDetail.kpi.avgCompletion', 'Average completion'), value: `${Math.round(averageCompletion)}%`, icon: Gauge, tone: 'teal' },
-          { label: t('research.participantDetail.kpi.prePostGain', 'Pre/Post gain'), value: prePostGain === null ? '--' : formatSigned(prePostGain), icon: TrendingUp, tone: 'success' },
-          { label: t('research.participantDetail.kpi.dominantEmotion', 'Dominant emotion'), value: dominantEmotion ? emotionDisplayName(dominantEmotion, true, t) : '--', icon: Sparkles, tone: 'amber' },
-          { label: t('research.participantDetail.kpi.adaptiveEffectiveness', 'Adaptive effectiveness'), value: adaptiveEffectiveness === null ? '--' : `${Math.round(adaptiveEffectiveness)}%`, icon: Activity, tone: 'blue' },
-          { label: t('research.participantDetail.kpi.quizPassRate', 'Quiz pass rate'), value: quizPassRate === null ? '--' : `${Math.round(quizPassRate)}%`, icon: GraduationCap, tone: 'success' },
-          { label: t('research.participantDetail.kpi.avgQuizScore', 'Average quiz score'), value: averageQuizScore === null ? '--' : `${Math.round(averageQuizScore)}%`, icon: Target, tone: 'blue' },
+          { label: t('research.participantDetail.kpi.avgCompletion', 'Average completion'), value: `${Math.round(averageCompletion)}%`, icon: Gauge, tone: 'teal' as const },
+          { label: t('research.participantDetail.kpi.prePostGain', 'Pre/Post gain'), value: prePostGain === null ? '--' : formatSigned(prePostGain), icon: TrendingUp, tone: 'success' as const },
+          { label: t('research.participantDetail.kpi.dominantEmotion', 'Dominant emotion'), value: dominantEmotion ? emotionDisplayName(dominantEmotion, true, t) : '--', icon: Sparkles, tone: 'amber' as const },
+          { label: t('research.participantDetail.kpi.adaptiveEffectiveness', 'Adaptive effectiveness'), value: adaptiveEffectiveness === null ? '--' : `${Math.round(adaptiveEffectiveness)}%`, icon: Activity, tone: 'blue' as const },
+          { label: t('research.participantDetail.kpi.quizPassRate', 'Quiz pass rate'), value: quizPassRate === null ? '--' : `${Math.round(quizPassRate)}%`, icon: GraduationCap, tone: 'success' as const },
+          { label: t('research.participantDetail.kpi.avgQuizScore', 'Average quiz score'), value: averageQuizScore === null ? '--' : `${Math.round(averageQuizScore)}%`, icon: Target, tone: 'blue' as const },
         ].map(({ label, value, icon: Icon, tone }) => (
-          <article key={label} className={styles.kpiCard}>
-            <div className={`${styles.kpiIcon} ${styles[`tone${capitalize(tone)}`]}`}>
-              <Icon size={18} />
-            </div>
-            <div>
-              <div className={styles.kpiValue}>{value}</div>
-              <div className={styles.kpiLabel}>{label}</div>
-            </div>
-          </article>
+          <StatCard key={label} icon={Icon} value={value} label={label} tone={tone} />
         ))}
       </section>
 

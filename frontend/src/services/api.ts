@@ -2,9 +2,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const BASE = import.meta.env.VITE_API_BASE_URL
   ? String(import.meta.env.VITE_API_BASE_URL)
-  : import.meta.env.DEV
-    ? 'http://127.0.0.1:3002'
-    : '';
+  : '';
 
 class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) {
@@ -34,7 +32,12 @@ async function request<T>(
     throw new ApiError(res.status, body.error ?? 'Request failed', body.code);
   }
 
-  return res.json() as Promise<T>;
+  // 204 No Content (e.g. DELETE endpoints) and empty bodies have no JSON to parse —
+  // calling res.json() on them throws, which would reject the promise *after* the
+  // server already succeeded and skip any post-mutation cache refresh.
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 async function requestBlob(path: string, options: RequestInit = {}): Promise<Blob> {
@@ -74,6 +77,7 @@ const post = <T>(path: string, body: unknown) =>
   request<T>(path, { method: 'POST', body: JSON.stringify(body) });
 const patch = <T>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) });
+const del = <T>(path: string) => request<T>(path, { method: 'DELETE' });
 
 // ── Auth ─────────────────────────────────────────────────────
 export const authApi = {
@@ -81,7 +85,17 @@ export const authApi = {
     post<{ data: { accessToken: string; refreshToken: string; learnerId: string } }>(
       '/auth/login', { participantId, password }),
   register: (body: object) => post('/auth/register', body),
-  me:       () => get<{ data: { id: string; participantId: string; cohort: string; role: 'learner' | 'research_admin' } }>('/auth/me'),
+  me:       () => get<{ data: {
+    id: string;
+    participantId: string;
+    cohort: 'experimental' | 'control';
+    role: 'learner' | 'research_admin';
+    isActive: boolean;
+    groupLabel: string;
+    groupEmotionTrackingEnabled: boolean;
+    emotionTrackingOverride: boolean | null;
+    emotionTrackingEnabled: boolean;
+  } }>('/auth/me'),
   logout:   () => post('/auth/logout', {}),
 };
 
@@ -93,6 +107,12 @@ export const learnerApi = {
   recordConsent: (id: string, body: object) => post(`/learners/${id}/consent`, body),
   withdrawConsent: (id: string)   => post(`/learners/${id}/withdraw`, {}),
   getProgress: (id: string)       => get<{ data: unknown }>(`/learners/${id}/progress`),
+  getAdminOverview: () => get<{ data: unknown }>('/learners/admin/overview'),
+  updateGroupEmotionTracking: (cohort: 'experimental' | 'control', emotionTrackingEnabled: boolean) =>
+    patch<{ data: unknown }>(`/learners/admin/groups/${cohort}`, { emotionTrackingEnabled }),
+  updateLearnerAccess: (id: string, body: { isActive?: boolean; emotionTrackingOverride?: boolean | null }) =>
+    patch<{ data: unknown }>(`/learners/admin/learners/${id}`, body),
+  deleteLearner: (id: string) => del<{ data: unknown }>(`/learners/admin/learners/${id}`),
 };
 
 // ── Sessions ─────────────────────────────────────────────────
@@ -137,6 +157,25 @@ export const scenarioApi = {
   updateContent:  (id: string, body: object) => patch(`/scenarios/content/${id}`, body),
   deleteContent:  (id: string) => request(`/scenarios/content/${id}`, { method: 'DELETE' }),
   reorderContent: (items: any[]) => post('/scenarios/content/reorder', { items }),
+
+  // Upload a PDF (raw binary) → returns a served URL to store as document content.
+  uploadPdf: async (file: File) => {
+    const token = useAuthStore.getState().accessToken;
+    const res = await fetch(`${BASE}/api/scenarios/content/upload-file`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/pdf',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: file,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) useAuthStore.getState().logout();
+      throw new ApiError(res.status, body.error ?? 'Upload failed', body.code);
+    }
+    return res.json() as Promise<{ data: { url: string; fileName: string } }>;
+  },
 
   reorder:       (items: any[]) => post('/scenarios/reorder', { items }),
 };
@@ -197,6 +236,7 @@ export const researchApi = {
   contentEngagement:        () => get('/research/content-engagement'),
   assessmentLatency:        () => get('/research/assessment-latency'),
   timelineHeatmap:          (params?: string) => get(`/research/timeline-heatmap${params ? '?' + params : ''}`),
+  assessmentResults:        (form: 'pre' | 'post') => get(`/research/assessment-results?form=${form}`),
   participantSummary:       (pid: string) => get(`/research/participant/${pid}`),
   logAdminSimulation:       (body: object) => post('/research/admin-simulations', body),
   exportSessions:           () => downloadBlob('/research/export/sessions', 'step_sessions.csv'),
@@ -205,6 +245,24 @@ export const researchApi = {
   exportEmotionEvents:      () => downloadBlob('/research/export/emotion-events', 'step_emotion_events.csv'),
   exportTimelineHeatmap:    (params?: string) => downloadBlob(`/research/export/timeline-heatmap${params ? `?${params}` : ''}`, 'step_timeline_heatmap.csv'),
   exportMergedAnalytics:    () => downloadBlob('/research/export/merged-ml-dataset', 'step_merged_ml_dataset.csv'),
+  exportAssessmentResults:  (form: 'pre' | 'post') =>
+    downloadBlob(
+      `/research/export/assessment-results?form=${form}`,
+      form === 'pre' ? 'step_pretest_results.xlsx' : 'step_posttest_results.xlsx',
+    ),
+};
+
+// ── Platform settings ────────────────────────────────────────
+export type ConsentContent = {
+  title: string;
+  intro: string;
+  body: string;
+  declineNote: string;
+};
+
+export const settingsApi = {
+  getConsent: () => get<{ data: ConsentContent }>('/settings/consent'),
+  updateConsent: (body: ConsentContent) => patch<{ data: ConsentContent }>('/settings/consent', body),
 };
 
 export { ApiError };

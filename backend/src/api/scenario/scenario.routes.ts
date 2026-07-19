@@ -1,8 +1,17 @@
-import { Router } from 'express';
+import { Router, raw } from 'express';
 import { authenticate, requireRole } from '../../middleware/auth';
 import * as ctrl from './scenario.controller';
 
 const router = Router();
+
+// Upload a PDF as lesson content (raw binary body → stored on disk, returns a URL)
+router.post(
+  '/content/upload-file',
+  authenticate,
+  requireRole('research_admin'),
+  raw({ type: 'application/pdf', limit: '25mb' }),
+  ctrl.uploadContentFile,
+);
 
 // List all modules with episode summaries
 router.get('/modules',             authenticate, ctrl.listModules);

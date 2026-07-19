@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certifi
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
-RUN mkdir -p logs && chown step:step logs
+RUN mkdir -p logs uploads && chown step:step logs uploads
 USER step
 EXPOSE 3001
 CMD ["node", "dist/server.js"]

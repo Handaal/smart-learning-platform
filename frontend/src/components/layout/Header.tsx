@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useI18n } from '@/i18n';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 import styles from './Header.module.css';
 
 type Props = {
@@ -12,7 +13,8 @@ type Props = {
 
 export default function Header({ title, subtitle, onMenuToggle }: Props) {
   const role = useAuthStore((state) => state.role);
-  const cohort = useAuthStore((state) => state.cohort);
+  const isActive = useAuthStore((state) => state.isActive);
+  const emotionTrackingEnabled = useAuthStore((state) => state.emotionTrackingEnabled);
   const { t } = useI18n();
 
   return (
@@ -32,16 +34,22 @@ export default function Header({ title, subtitle, onMenuToggle }: Props) {
       </div>
 
       <div className={styles.actions}>
+        <ThemeToggle />
         <LanguageSwitcher />
-        {role === 'learner' && cohort === 'experimental' ? (
+        {role === 'learner' && isActive === false ? (
           <div className={styles.workspacePill}>
             <span className={styles.workspaceDot} />
-            {t('layout.header.experimentalSupportBadge', 'جلسة الدعم الذكي مفعلة')}
+            {t('layout.header.pendingApprovalBadge')}
+          </div>
+        ) : role === 'learner' && emotionTrackingEnabled ? (
+          <div className={styles.workspacePill}>
+            <span className={styles.workspaceDot} />
+            {t('layout.header.experimentalSupportBadge')}
           </div>
         ) : role === 'learner' ? (
           <div className={styles.workspacePill}>
             <span className={styles.workspaceDot} />
-            {t('layout.header.controlGroupBadge', 'Standard learning flow')}
+            {t('layout.header.controlFlowBadge')}
           </div>
         ) : (
           <div className={styles.workspacePill}>

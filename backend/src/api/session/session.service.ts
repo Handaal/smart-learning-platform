@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { AppError } from '../../middleware/errorHandler';
+import { resolveLearnerAccessSnapshot } from '../../services/learnerAccess';
 
 interface StartInput {
   moduleId:      string;
@@ -9,6 +10,11 @@ interface StartInput {
 }
 
 export async function startSession(learnerId: string, input: StartInput) {
+  const access = await resolveLearnerAccessSnapshot(learnerId);
+  if (!access.isActive) {
+    throw new AppError(403, 'Your account is awaiting admin approval', 'ACCOUNT_INACTIVE');
+  }
+
   const firstEpisode = !input.episodeId
     ? await prisma.episode.findFirst({
         where: { moduleId: input.moduleId },

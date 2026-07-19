@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { authApi } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
+import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import { authApi, settingsApi } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './LoginPage.module.css';
+
+const PARTICIPANT_ID_PATTERN = /^[A-Za-z0-9]{3,32}$/;
 
 export default function RegisterPage() {
   const [pid, setPid] = useState('');
@@ -10,9 +14,21 @@ export default function RegisterPage() {
   const [createdId, setCreatedId] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
   const { t } = useI18n();
 
-  async function handleSubmit(event: React.FormEvent) {
+  const consentQuery = useQuery({
+    queryKey: ['registration-consent'],
+    queryFn: () => settingsApi.getConsent(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const consent = consentQuery.data?.data;
+  const consentBodyParagraphs = (consent?.body ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!pass) {
       setErr(t('auth.register.errors.required'));
@@ -22,7 +38,18 @@ export default function RegisterPage() {
       setErr(t('auth.register.errors.shortPassword'));
       return;
     }
+    const trimmedPid = pid.trim();
+    if (trimmedPid && !PARTICIPANT_ID_PATTERN.test(trimmedPid.replace(/[^A-Za-z0-9]/g, ''))) {
+      setErr(t('auth.register.errors.invalidParticipantId'));
+      return;
+    }
 
+    setErr('');
+    setConsentOpen(true);
+  }
+
+  async function handleConsentApprove() {
+    setConsentOpen(false);
     setBusy(true);
     setErr('');
     try {
@@ -31,6 +58,7 @@ export default function RegisterPage() {
         password: pass,
         cohort,
         role: 'learner',
+        consentAccepted: true,
       })) as { data: { participantId: string } };
       setCreatedId(response.data.participantId);
     } catch (error: any) {
@@ -38,6 +66,11 @@ export default function RegisterPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleConsentDecline() {
+    setConsentOpen(false);
+    setErr(consent?.declineNote ?? t('auth.register.consent.declinedNote'));
   }
 
   return (
@@ -98,9 +131,14 @@ export default function RegisterPage() {
         )}
 
         {createdId && (
-          <p className={styles.sub} role="status">
-            {t('auth.register.generatedIdPrefix')} <strong>{createdId}</strong>. {t('auth.register.generatedIdSuffix')}
-          </p>
+          <div className={styles.successCard} role="status">
+            <span className={styles.successTitle}>
+              <CheckCircle2 size={16} />
+              {t('auth.register.generatedIdPrefix')}
+            </span>
+            <span className={styles.successId}>{createdId}</span>
+            <p className={styles.successHint}>{t('auth.register.generatedIdSuffix')}</p>
+          </div>
         )}
 
         <button type="submit" className="btn btn-primary" disabled={busy} style={{ width: '100%' }}>
@@ -117,6 +155,46 @@ export default function RegisterPage() {
         <a href="/login">{t('auth.register.signIn')}</a>
         {createdId ? ` ${t('auth.register.generatedIdLoginHint')}` : ''}
       </p>
+
+      {consentOpen && (
+        <div className={styles.consentOverlay} role="presentation">
+          <div
+            className={styles.consentDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="consent-title"
+          >
+            <h3 id="consent-title" className={styles.consentTitle}>
+              <ShieldCheck size={20} />
+              {consent?.title ?? t('auth.register.consent.title')}
+            </h3>
+            <p className={styles.consentIntro}>{consent?.intro ?? t('auth.register.consent.intro')}</p>
+            <ul className={styles.consentList}>
+              {(consentBodyParagraphs.length
+                ? consentBodyParagraphs
+                : [
+                    t('auth.register.consent.pointResearch'),
+                    t('auth.register.consent.pointCamera'),
+                    t('auth.register.consent.pointAnonymity'),
+                  ]
+              ).map((line, index) => (
+                <li key={index}>
+                  <ShieldCheck size={16} />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <div className={styles.consentActions}>
+              <button type="button" className="btn btn-secondary" onClick={handleConsentDecline}>
+                {t('auth.register.consent.decline')}
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleConsentApprove}>
+                {t('auth.register.consent.approve')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

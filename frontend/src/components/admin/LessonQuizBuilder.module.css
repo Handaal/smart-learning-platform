@@ -15,7 +15,7 @@
   padding: 14px;
   border-radius: 16px;
   border: 1px solid var(--color-border-soft);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-surface);
 }
 
 .assessmentTypeCard strong {
@@ -67,7 +67,7 @@
   padding: 18px;
   border-radius: 20px;
   border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -127,7 +127,7 @@
   gap: 6px;
   padding: 14px;
   border-radius: 18px;
-  background: rgba(244, 239, 228, 0.6);
+  background: var(--color-bg);
 }
 
 .quizStats span {
@@ -138,7 +138,7 @@
 .questionCard {
   display: grid;
   gap: 14px;
-  background: rgba(252, 249, 243, 0.9);
+  background: var(--color-surface);
 }
 
 .choiceList {
@@ -153,7 +153,7 @@
   gap: 10px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
 }
 
@@ -178,7 +178,7 @@
   text-align: center;
   border-radius: 20px;
   border: 1px dashed var(--color-border);
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--color-surface);
   color: var(--color-text-3);
 }
 
@@ -207,7 +207,7 @@
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--color-border);
-  background: rgba(244, 239, 228, 0.5);
+  background: var(--color-bg);
 }
 
 .choiceEditorHead span {
@@ -228,7 +228,7 @@
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--color-border);
-  background: rgba(244, 239, 228, 0.5);
+  background: var(--color-bg);
 }
 
 .modalActions {

@@ -13,6 +13,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import styles from './ResearchAdminHome.module.css';
 
@@ -28,7 +29,19 @@ const ICONS = {
   FlaskConical,
 } as const;
 
+/** Rotating accent identities so the feature tiles read as distinct, organized sections. */
+const CARD_ACCENTS = ['teal', 'indigo', 'coral', 'amber'] as const;
+
 type ReportChartType = 'bars' | 'line' | 'matrix' | 'table' | 'timeline' | 'scatter';
+
+const CHART_ICON_MAP: Record<ReportChartType, LucideIcon> = {
+  bars:     BarChart3,
+  line:     LineChart,
+  matrix:   ScanFace,
+  table:    Activity,
+  timeline: Layers3,
+  scatter:  ArrowLeftRight,
+};
 
 type ReportCard = {
   title: string;
@@ -38,6 +51,140 @@ type ReportCard = {
   explains: string;
   callouts: string[];
 };
+
+const REPORT_CARDS_AR: ReportCard[] = [
+  {
+    title: 'لوحة النظرة العامة',
+    href: '/research-admin/reports#overview',
+    chart: 'bars',
+    shows: 'المشاركون، والإكمال، وخط الأساس العام للتكيف والجاهزية.',
+    explains: 'تُستخدم كبداية للعرض وتثبيت السياق العام.',
+    callouts: ['حجم العينة', 'خط الإكمال', 'تغطية التكيف'],
+  },
+  {
+    title: 'تحليلات تقدم المتعلمين',
+    href: '/research-admin/reports#progress',
+    chart: 'line',
+    shows: 'مسار التقدم والإيقاع واستمرارية الجلسات عبر الزمن.',
+    explains: 'توضح أين يتسارع أو يتباطأ مسار التعلم.',
+    callouts: ['اتجاه التقدم', 'إيقاع الجلسات', 'نقطة التباطؤ'],
+  },
+  {
+    title: 'الاختبار القبلي/البعدي',
+    href: '/research-admin/reports#prepost',
+    chart: 'bars',
+    shows: 'النتائج القبلية/البعدية المتطابقة وفروق الكسب بين المجموعات.',
+    explains: 'يعرض أثر التعلم والتحسن بين البداية والنهاية.',
+    callouts: ['نتائج قبلية/بعدية', 'فروق الكسب', 'الصفوف المطابقة'],
+  },
+  {
+    title: 'ملخص الاستشعار الانفعالي',
+    href: '/research-admin/reports#emotions',
+    chart: 'matrix',
+    shows: 'الحالات المهيمنة وانتشار الثقة وكثافة الأحداث للمجموعة التجريبية.',
+    explains: 'يمهّد لقراءة الخط الزمني الانفعالي قبل التفسير التفصيلي.',
+    callouts: ['الحالة المهيمنة', 'انتشار الثقة', 'كثافة الأحداث'],
+  },
+  {
+    title: 'فعالية التدخلات',
+    href: '/research-admin/reports#interventions',
+    chart: 'table',
+    shows: 'سبب التفعيل، ونوع التدخل، واستجابة المتعلم، والتغير بعد التدخل.',
+    explains: 'يبين متى كان التدخل مفيدًا وكيف أثّر على المتابعة.',
+    callouts: ['مصدر التفعيل', 'استجابة المتعلم', 'تغير النتيجة'],
+  },
+  {
+    title: 'تفاصيل جلسة المشارك',
+    href: '/research-admin/reports#participant-detail',
+    chart: 'timeline',
+    shows: 'تسلسل الجلسة خطوة بخطوة لمشارك واحد مع التدخلات وفترات الرجوع للأداء فقط.',
+    explains: 'مفيد لعرض حالة فردية أو تتبع تقني دقيق.',
+    callouts: ['تسلسل الأحداث', 'تحولات الحالة', 'أثر التدخل'],
+  },
+  {
+    title: 'مقارنة المجموعات',
+    href: '/research-admin/reports#comparison',
+    chart: 'line',
+    shows: 'الفروق العامة بين المجموعة الضابطة والتجريبية في التقدم والمكسب.',
+    explains: 'تدعم المقارنة البحثية الأساسية بين المجموعتين.',
+    callouts: ['فجوة المجموعات', 'اتجاه المقارنة', 'فرق الأثر'],
+  },
+  {
+    title: 'الانفعال مقابل الأداء',
+    href: '/research-admin/reports#emotion-performance',
+    chart: 'scatter',
+    shows: 'العلاقة بين الحالة الوجدانية ونتائج الأداء أو الإكمال.',
+    explains: 'تساعد في تفسير أثر العبء الوجداني على النتائج.',
+    callouts: ['عناقيد الأداء', 'إشارات التعثر', 'أثر التركيز'],
+  },
+];
+
+const REPORT_CARDS_EN: ReportCard[] = [
+  {
+    title: 'Overview Dashboard',
+    href: '/research-admin/reports#overview',
+    chart: 'bars',
+    shows: 'Participants, completion, and overall adaptive readiness indicators.',
+    explains: 'Use this first to establish the research context.',
+    callouts: ['Population size', 'Completion baseline', 'Adaptive coverage'],
+  },
+  {
+    title: 'Learner Progress Analytics',
+    href: '/research-admin/reports#progress',
+    chart: 'line',
+    shows: 'Progress trajectory, pacing, and continuity across sessions.',
+    explains: 'Highlights where the learning flow accelerates or slows down.',
+    callouts: ['Progress trend', 'Session rhythm', 'Slowdown points'],
+  },
+  {
+    title: 'Pre/Post Assessment',
+    href: '/research-admin/reports#prepost',
+    chart: 'bars',
+    shows: 'Matched pre/post outcomes and gain differences by group.',
+    explains: 'Shows learning improvement from baseline to endline.',
+    callouts: ['Pre/Post rows', 'Gain delta', 'Matched records'],
+  },
+  {
+    title: 'Emotion Sensing Summary',
+    href: '/research-admin/reports#emotions',
+    chart: 'matrix',
+    shows: 'Dominant states, confidence spread, and event density for the experimental group.',
+    explains: 'Introduces the affective profile before timeline analysis.',
+    callouts: ['Dominant state', 'Confidence spread', 'Event density'],
+  },
+  {
+    title: 'Intervention Effectiveness',
+    href: '/research-admin/reports#interventions',
+    chart: 'table',
+    shows: 'Trigger reason, intervention type, learner action, and post-event change.',
+    explains: 'Shows when an intervention helped and what changed after it.',
+    callouts: ['Trigger source', 'Learner action', 'Outcome change'],
+  },
+  {
+    title: 'Participant Session Detail',
+    href: '/research-admin/reports#participant-detail',
+    chart: 'timeline',
+    shows: 'Step-by-step session sequence for one learner, including fallback periods.',
+    explains: 'Useful for case-based walkthroughs and detailed debugging.',
+    callouts: ['Event order', 'State shifts', 'Intervention trace'],
+  },
+  {
+    title: 'Group Comparison',
+    href: '/research-admin/reports#comparison',
+    chart: 'line',
+    shows: 'Overall differences between the control and experimental groups.',
+    explains: 'Supports the core between-group comparison in the study.',
+    callouts: ['Cohort gap', 'Trend comparison', 'Effect delta'],
+  },
+  {
+    title: 'Emotion vs Performance',
+    href: '/research-admin/reports#emotion-performance',
+    chart: 'scatter',
+    shows: 'Relationship between learner state burden and performance outcomes.',
+    explains: 'Helps interpret how affective burden relates to results.',
+    callouts: ['Performance clusters', 'Struggle signals', 'Focus effect'],
+  },
+];
 
 function ReportMiniChart({ type }: { type: ReportChartType }) {
   if (type === 'bars') {
@@ -113,139 +260,7 @@ export default function ResearchAdminHome() {
   const { t, tm, isRtl } = useI18n();
   const workspaceAreas = tm<WorkspaceArea[]>('research.home.areas', []);
   const summaryItems = tm<string[]>('research.home.summaryItems', []);
-  const reportCards: ReportCard[] = isRtl
-    ? [
-        {
-          title: 'لوحة النظرة العامة',
-          href: '/research-admin/reports#overview',
-          chart: 'bars',
-          shows: 'المشاركون، والإكمال، وخط الأساس العام للتكيف والجاهزية.',
-          explains: 'تُستخدم كبداية للعرض وتثبيت السياق العام.',
-          callouts: ['حجم العينة', 'خط الإكمال', 'تغطية التكيف'],
-        },
-        {
-          title: 'تحليلات تقدم المتعلمين',
-          href: '/research-admin/reports#progress',
-          chart: 'line',
-          shows: 'مسار التقدم والإيقاع واستمرارية الجلسات عبر الزمن.',
-          explains: 'توضح أين يتسارع أو يتباطأ مسار التعلم.',
-          callouts: ['اتجاه التقدم', 'إيقاع الجلسات', 'نقطة التباطؤ'],
-        },
-        {
-          title: 'الاختبار القبلي/البعدي',
-          href: '/research-admin/reports#prepost',
-          chart: 'bars',
-          shows: 'النتائج القبلية/البعدية المتطابقة وفروق الكسب بين المجموعات.',
-          explains: 'يعرض أثر التعلم والتحسن بين البداية والنهاية.',
-          callouts: ['نتائج قبلية/بعدية', 'فروق الكسب', 'الصفوف المطابقة'],
-        },
-        {
-          title: 'ملخص الاستشعار الانفعالي',
-          href: '/research-admin/reports#emotions',
-          chart: 'matrix',
-          shows: 'الحالات المهيمنة وانتشار الثقة وكثافة الأحداث للمجموعة التجريبية.',
-          explains: 'يمهّد لقراءة الخط الزمني الانفعالي قبل التفسير التفصيلي.',
-          callouts: ['الحالة المهيمنة', 'انتشار الثقة', 'كثافة الأحداث'],
-        },
-        {
-          title: 'فعالية التدخلات',
-          href: '/research-admin/reports#interventions',
-          chart: 'table',
-          shows: 'سبب التفعيل، ونوع التدخل، واستجابة المتعلم، والتغير بعد التدخل.',
-          explains: 'يبين متى كان التدخل مفيدًا وكيف أثّر على المتابعة.',
-          callouts: ['مصدر التفعيل', 'استجابة المتعلم', 'تغير النتيجة'],
-        },
-        {
-          title: 'تفاصيل جلسة المشارك',
-          href: '/research-admin/reports#participant-detail',
-          chart: 'timeline',
-          shows: 'تسلسل الجلسة خطوة بخطوة لمشارك واحد مع التدخلات وفترات الرجوع للأداء فقط.',
-          explains: 'مفيد لعرض حالة فردية أو تتبع تقني دقيق.',
-          callouts: ['تسلسل الأحداث', 'تحولات الحالة', 'أثر التدخل'],
-        },
-        {
-          title: 'مقارنة المجموعات',
-          href: '/research-admin/reports#comparison',
-          chart: 'line',
-          shows: 'الفروق العامة بين المجموعة الضابطة والتجريبية في التقدم والمكسب.',
-          explains: 'تدعم المقارنة البحثية الأساسية بين المجموعتين.',
-          callouts: ['فجوة المجموعات', 'اتجاه المقارنة', 'فرق الأثر'],
-        },
-        {
-          title: 'الانفعال مقابل الأداء',
-          href: '/research-admin/reports#emotion-performance',
-          chart: 'scatter',
-          shows: 'العلاقة بين الحالة الوجدانية ونتائج الأداء أو الإكمال.',
-          explains: 'تساعد في تفسير أثر العبء الوجداني على النتائج.',
-          callouts: ['عناقيد الأداء', 'إشارات التعثر', 'أثر التركيز'],
-        },
-      ]
-    : [
-        {
-          title: 'Overview Dashboard',
-          href: '/research-admin/reports#overview',
-          chart: 'bars',
-          shows: 'Participants, completion, and overall adaptive readiness indicators.',
-          explains: 'Use this first to establish the research context.',
-          callouts: ['Population size', 'Completion baseline', 'Adaptive coverage'],
-        },
-        {
-          title: 'Learner Progress Analytics',
-          href: '/research-admin/reports#progress',
-          chart: 'line',
-          shows: 'Progress trajectory, pacing, and continuity across sessions.',
-          explains: 'Highlights where the learning flow accelerates or slows down.',
-          callouts: ['Progress trend', 'Session rhythm', 'Slowdown points'],
-        },
-        {
-          title: 'Pre/Post Assessment',
-          href: '/research-admin/reports#prepost',
-          chart: 'bars',
-          shows: 'Matched pre/post outcomes and gain differences by group.',
-          explains: 'Shows learning improvement from baseline to endline.',
-          callouts: ['Pre/Post rows', 'Gain delta', 'Matched records'],
-        },
-        {
-          title: 'Emotion Sensing Summary',
-          href: '/research-admin/reports#emotions',
-          chart: 'matrix',
-          shows: 'Dominant states, confidence spread, and event density for the experimental group.',
-          explains: 'Introduces the affective profile before timeline analysis.',
-          callouts: ['Dominant state', 'Confidence spread', 'Event density'],
-        },
-        {
-          title: 'Intervention Effectiveness',
-          href: '/research-admin/reports#interventions',
-          chart: 'table',
-          shows: 'Trigger reason, intervention type, learner action, and post-event change.',
-          explains: 'Shows when an intervention helped and what changed after it.',
-          callouts: ['Trigger source', 'Learner action', 'Outcome change'],
-        },
-        {
-          title: 'Participant Session Detail',
-          href: '/research-admin/reports#participant-detail',
-          chart: 'timeline',
-          shows: 'Step-by-step session sequence for one learner, including fallback periods.',
-          explains: 'Useful for case-based walkthroughs and detailed debugging.',
-          callouts: ['Event order', 'State shifts', 'Intervention trace'],
-        },
-        {
-          title: 'Group Comparison',
-          href: '/research-admin/reports#comparison',
-          chart: 'line',
-          shows: 'Overall differences between the control and experimental groups.',
-          explains: 'Supports the core between-group comparison in the study.',
-          callouts: ['Cohort gap', 'Trend comparison', 'Effect delta'],
-        },
-        {
-          title: 'Emotion vs Performance',
-          href: '/research-admin/reports#emotion-performance',
-          chart: 'scatter',
-          shows: 'Relationship between learner state burden and performance outcomes.',
-          explains: 'Helps interpret how affective burden relates to results.',
-          callouts: ['Performance clusters', 'Struggle signals', 'Focus effect'],
-        },
-      ];
+  const reportCards = isRtl ? REPORT_CARDS_AR : REPORT_CARDS_EN;
 
   return (
     <div className={styles.page}>
@@ -262,10 +277,23 @@ export default function ResearchAdminHome() {
       </section>
 
       <section className={styles.grid}>
-        {workspaceAreas.map((area) => {
+        <article className={`${styles.card} card`} data-accent={CARD_ACCENTS[0]}>
+          <div className={styles.iconWrap}>
+            <Users size={18} />
+          </div>
+          <h2>{t('research.home.userManagementCardTitle')}</h2>
+          <p>{t('research.home.userManagementCardDescription')}</p>
+          <Link to="/research-admin/access" className={styles.link}>
+            {t('research.home.openManagementPanel')}
+            <ArrowRight size={14} style={isRtl ? { transform: 'rotate(180deg)' } : undefined} />
+          </Link>
+        </article>
+
+        {workspaceAreas.map((area, index) => {
           const Icon = ICONS[area.icon as keyof typeof ICONS] ?? Layers3;
+          const accent = CARD_ACCENTS[(index + 1) % CARD_ACCENTS.length];
           return (
-            <article key={area.href} className={`${styles.card} card`}>
+            <article key={area.href} className={`${styles.card} card`} data-accent={accent}>
               <div className={styles.iconWrap}>
                 <Icon size={18} />
               </div>
@@ -283,39 +311,23 @@ export default function ResearchAdminHome() {
       <section className={`${styles.reportShowcase} card`}>
         <div className={styles.reportShowcaseHeader}>
           <div>
-            <p className={styles.sectionEyebrow}>{isRtl ? 'كتالوج التقارير البحثية' : 'Research report catalog'}</p>
-            <h2>{isRtl ? 'التقارير الأساسية داخل حساب الباحث' : 'Core reports inside the researcher account'}</h2>
-            <p className={styles.reportShowcaseLead}>
-              {isRtl
-                ? 'تظهر هذه البطاقات نفس مجموعة التقارير الأساسية المستخدمة في العرض الأكاديمي، مع رابط مباشر إلى القسم المطابق داخل صفحة التقارير.'
-                : 'These cards mirror the core reports used in academic presentations and link directly to the matching section in the reports dashboard.'}
-            </p>
+            <p className={styles.sectionEyebrow}>{t('research.home.reportCatalogEyebrow')}</p>
+            <h2>{t('research.home.reportCatalogTitle')}</h2>
+            <p className={styles.reportShowcaseLead}>{t('research.home.reportCatalogLead')}</p>
           </div>
           <Link to="/research-admin/reports#overview" className={styles.sectionCta}>
-            {isRtl ? 'فتح صفحة التقارير' : 'Open reports page'}
+            {t('research.home.openReportsPage')}
             <ArrowRight size={14} style={isRtl ? { transform: 'rotate(180deg)' } : undefined} />
           </Link>
         </div>
 
         <div className={styles.reportGrid}>
-          {reportCards.map((report) => {
-            const Icon =
-              report.chart === 'bars'
-                ? BarChart3
-                : report.chart === 'line'
-                  ? LineChart
-                  : report.chart === 'matrix'
-                    ? ScanFace
-                    : report.chart === 'table'
-                      ? Activity
-                      : report.chart === 'timeline'
-                        ? Layers3
-                        : report.title.includes('المجموعات') || report.title.includes('Group')
-                          ? Users
-                          : ArrowLeftRight;
+          {reportCards.map((report, index) => {
+            const Icon = CHART_ICON_MAP[report.chart] ?? ArrowLeftRight;
+            const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
 
             return (
-              <article key={report.title} className={styles.reportCard}>
+              <article key={report.title} className={styles.reportCard} data-accent={accent}>
                 <header className={styles.reportCardHead}>
                   <div className={styles.reportIconWrap}>
                     <Icon size={16} />
@@ -326,10 +338,7 @@ export default function ResearchAdminHome() {
                   <ReportMiniChart type={report.chart} />
                 </div>
                 <div className={styles.reportCopy}>
-                  <strong>{isRtl ? 'ما الذي يعرضه' : 'What it shows'}</strong>
                   <p>{report.shows}</p>
-                  <strong>{isRtl ? 'كيف يُفسَّر' : 'How to read it'}</strong>
-                  <p>{report.explains}</p>
                 </div>
                 <ul className={styles.reportCallouts}>
                   {report.callouts.map((callout) => (
@@ -337,7 +346,7 @@ export default function ResearchAdminHome() {
                   ))}
                 </ul>
                 <Link to={report.href} className={styles.link}>
-                  {isRtl ? 'فتح هذا التقرير' : 'Open this report'}
+                  {t('research.home.openThisReport')}
                   <ArrowRight size={14} style={isRtl ? { transform: 'rotate(180deg)' } : undefined} />
                 </Link>
               </article>

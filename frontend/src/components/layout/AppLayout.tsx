@@ -14,7 +14,8 @@ type PageMeta = {
 function resolvePageMeta(
   pathname: string,
   role: 'learner' | 'research_admin' | null,
-  t: (key: string) => string,
+  t: (key: string, fallback?: string) => string,
+  language: 'ar' | 'en',
 ): PageMeta {
   if (pathname.startsWith('/research-admin/course')) {
     return {
@@ -41,6 +42,20 @@ function resolvePageMeta(
     return {
       title: t('layout.pageMeta.adaptiveDisplayCriteriaTitle'),
       subtitle: t('layout.pageMeta.adaptiveDisplayCriteriaSubtitle'),
+    };
+  }
+
+  if (pathname.startsWith('/research-admin/access')) {
+    return {
+      title: t('layout.pageMeta.userManagementTitle'),
+      subtitle: t('layout.pageMeta.userManagementSubtitle'),
+    };
+  }
+
+  if (pathname.startsWith('/research-admin/consent')) {
+    return {
+      title: t('layout.pageMeta.consentSettingsTitle', 'Consent & Terms'),
+      subtitle: t('layout.pageMeta.consentSettingsSubtitle', 'Registration consent text'),
     };
   }
 
@@ -121,10 +136,10 @@ function resolvePageMeta(
 export default function AppLayout() {
   const location = useLocation();
   const role = useAuthStore((state) => state.role);
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const pageMeta = useMemo(() => resolvePageMeta(location.pathname, role, t), [location.pathname, role, t]);
+  const pageMeta = useMemo(() => resolvePageMeta(location.pathname, role, t, language), [language, location.pathname, role, t]);
 
   useEffect(() => {
     setSidebarOpen(false);

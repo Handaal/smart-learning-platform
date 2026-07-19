@@ -8,6 +8,11 @@ interface AuthState {
   participantId: string | null;
   cohort:        'experimental' | 'control' | null;
   role:          'learner' | 'research_admin' | null;
+  isActive:      boolean | null;
+  groupLabel:    string | null;
+  groupEmotionTrackingEnabled: boolean | null;
+  emotionTrackingOverride: boolean | null;
+  emotionTrackingEnabled: boolean | null;
   isVerified:    boolean;
 
   setTokens: (tokens: { accessToken: string; refreshToken: string }) => void;
@@ -25,6 +30,11 @@ export const useAuthStore = create<AuthState>()(
       participantId: null,
       cohort:        null,
       role:          null,
+      isActive:      null,
+      groupLabel:    null,
+      groupEmotionTrackingEnabled: null,
+      emotionTrackingOverride: null,
+      emotionTrackingEnabled: null,
       isVerified:    false,
 
       setTokens: ({ accessToken, refreshToken }) =>
@@ -38,7 +48,13 @@ export const useAuthStore = create<AuthState>()(
         set({
           accessToken: null, refreshToken: null,
           learnerId: null, participantId: null,
-          cohort: null, role: null, isVerified: false,
+          cohort: null, role: null,
+          isActive: null,
+          groupLabel: null,
+          groupEmotionTrackingEnabled: null,
+          emotionTrackingOverride: null,
+          emotionTrackingEnabled: null,
+          isVerified: false,
         }),
     }),
     {
@@ -50,6 +66,11 @@ export const useAuthStore = create<AuthState>()(
         participantId: state.participantId,
         cohort:        state.cohort,
         role:          state.role,
+        isActive:      state.isActive,
+        groupLabel:    state.groupLabel,
+        groupEmotionTrackingEnabled: state.groupEmotionTrackingEnabled,
+        emotionTrackingOverride: state.emotionTrackingOverride,
+        emotionTrackingEnabled: state.emotionTrackingEnabled,
         isVerified:    state.isVerified,
       }),
     }

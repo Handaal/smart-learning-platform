@@ -1,0 +1,162 @@
+.panel {
+  align-self: start;
+  position: sticky;
+  top: calc(var(--header-height) + 12px);
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+:global(html[data-theme='dark']) .panel {
+  background: var(--color-surface);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+}
+
+.head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #0d1117;
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  transition: opacity var(--transition-normal);
+}
+
+.offState {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: #9aa6b2;
+}
+
+.offState strong {
+  color: #c8d2dc;
+  font-size: 0.86rem;
+}
+
+.offState span {
+  font-size: 0.76rem;
+  color: #7c8794;
+  max-width: 22ch;
+}
+
+.toggle {
+  width: 100%;
+}
+
+.analysis {
+  display: grid;
+  gap: 10px;
+}
+
+.analysisHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-2);
+}
+
+.faceBadge {
+  margin-inline-start: auto;
+}
+
+.readingCard {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-2);
+}
+
+.readingLabel {
+  font-size: 0.74rem;
+  color: var(--color-text-3);
+}
+
+.readingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.emotion {
+  font-size: 0.92rem;
+  color: var(--color-accent);
+}
+
+.accuracy {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-2);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--color-text-3);
+}
+
+.metric {
+  display: grid;
+  gap: 6px;
+}
+
+.metricHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--color-text-2);
+}
+
+.metricHead strong {
+  color: var(--color-text);
+}
+
+.metricLabelWithIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 980px) {
+  .panel {
+    position: static;
+  }
+}

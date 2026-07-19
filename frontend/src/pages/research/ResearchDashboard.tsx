@@ -34,9 +34,13 @@ import {
   emotionDisplayName,
   normalizeEmotionState,
 } from '@/components/research/emotionPresentation';
+import StatCard from '@/components/ui/StatCard';
 import styles from './ResearchDashboard.module.css';
 
 const EMOTIONS: CanonicalEmotionState[] = RESEARCH_EMOTION_ORDER;
+
+/** Rotating accent identities for the report catalog cards. */
+const CATALOG_ACCENTS = ['teal', 'indigo', 'coral', 'amber'] as const;
 const CONTENT_TYPES = ['text', 'video', 'image', 'interactive_activity', 'reflection_prompt', 'quiz', 'scenario', 'unknown'] as const;
 
 const SECTION_LINKS = [
@@ -116,9 +120,43 @@ export default function ResearchDashboard() {
   const [exporting, setExporting] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState('');
+  const [activeSection, setActiveSection] = useState<string>(SECTION_LINKS[0]?.id ?? '');
   const cohortLabel = (value: string) => formatCohortLabel(t, value);
 
+  // Scroll-spy: highlight the section nav link for whichever section is in view.
+  useEffect(() => {
+    const sections = SECTION_LINKS
+      .map((link) => document.getElementById(link.id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible) setActiveSection(visible.target.id);
+      },
+      { rootMargin: '-128px 0px -55% 0px', threshold: 0 },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  });
+
   const gainQuery = useQuery({ queryKey: ['research', 'gain'], queryFn: researchApi.competencyGain, enabled: !USE_MOCK });
+  const preResultsQuery = useQuery({
+    queryKey: ['research', 'assessmentResults', 'pre'],
+    queryFn: () => researchApi.assessmentResults('pre'),
+    enabled: !USE_MOCK,
+  });
+  const postResultsQuery = useQuery({
+    queryKey: ['research', 'assessmentResults', 'post'],
+    queryFn: () => researchApi.assessmentResults('post'),
+    enabled: !USE_MOCK,
+  });
+  const preResults = ((preResultsQuery.data as any)?.data ?? []) as any[];
+  const postResults = ((postResultsQuery.data as any)?.data ?? []) as any[];
   const engagementQuery = useQuery({ queryKey: ['research', 'engagement'], queryFn: researchApi.engagement, enabled: !USE_MOCK });
   const effectivenessQuery = useQuery({ queryKey: ['research', 'effectiveness'], queryFn: researchApi.adaptiveEffectiveness, enabled: !USE_MOCK });
   const responseTypeQuery = useQuery({ queryKey: ['research', 'response-types'], queryFn: researchApi.responseTypeDistribution, enabled: !USE_MOCK });
@@ -728,9 +766,6 @@ export default function ResearchDashboard() {
             <span className={styles.highlightPill}><FlaskConical size={14} />{dominantEmotion ? emotionDisplayName(dominantEmotion.state, true, t) : t('research.dashboard.hero.noDominantEmotion', 'No dominant emotion yet')}</span>
             <span className={styles.highlightPill}><Gauge size={14} />{emotionSummary.avgConfidencePct}% {t('research.dashboard.hero.avgConfidence', 'avg confidence')}</span>
           </div>
-          <nav className={styles.sectionNav} aria-label={t('research.dashboard.hero.sectionNav', 'Report sections')}>
-            {SECTION_LINKS.map((link) => <a key={link.id} href={`#${link.id}`} className={styles.sectionLink}>{t(link.key)}</a>)}
-          </nav>
         </div>
 
         <div className={styles.utilityColumn}>
@@ -817,6 +852,21 @@ export default function ResearchDashboard() {
         </div>
       </section>
 
+      <nav className={styles.stickyNav} aria-label={t('research.dashboard.hero.sectionNav', 'Report sections')}>
+        <div className={styles.stickyNavInner}>
+          {SECTION_LINKS.map((link) => (
+            <a
+              key={link.id}
+              href={`#${link.id}`}
+              className={`${styles.sectionLink} ${activeSection === link.id ? styles.sectionLinkActive : ''}`}
+              aria-current={activeSection === link.id ? 'true' : undefined}
+            >
+              {t(link.key)}
+            </a>
+          ))}
+        </div>
+      </nav>
+
       {hasLoadingState ? (
         <section className="loading-panel">
           <strong>{t('research.dashboard.loading.title', 'Loading research analytics...')}</strong>
@@ -863,8 +913,9 @@ export default function ResearchDashboard() {
           <p>{ui('catalogLead', 'تجمع هذه البطاقات التقارير الأساسية المطلوبة في العرض الأكاديمي، مع رابط مباشر لكل قسم وحالة جاهزية سريعة للبيانات.')}</p>
         </div>
         <div className={styles.catalogGrid}>
-          {reportCatalog.map((item) => {
+          {reportCatalog.map((item, index) => {
             const Icon = item.icon;
+            const accent = CATALOG_ACCENTS[index % CATALOG_ACCENTS.length];
             const statusLabel =
               item.state === 'ready'
                 ? ui('catalogStatusReady', 'جاهز')
@@ -873,7 +924,7 @@ export default function ResearchDashboard() {
                   : ui('catalogStatusWaiting', 'بانتظار بيانات');
 
             return (
-              <article key={item.id} className={styles.catalogCard}>
+              <article key={item.id} className={styles.catalogCard} data-accent={accent}>
                 <div className={styles.catalogHead}>
                   <div className={styles.catalogIconWrap}>
                     <Icon size={16} />
@@ -906,14 +957,14 @@ export default function ResearchDashboard() {
 
       <section className={styles.kpiGrid}>
         {[
-          { icon: Users, label: ui('kpiParticipants', 'Participants'), value: totalParticipants, color: 'var(--color-accent-2)' },
-          { icon: Gauge, label: ui('kpiAverageCompletion', 'Average Completion'), value: `${Math.round(avg(aggregates.map((r: any) => r.avgCompletionPct)))}%`, color: 'var(--color-success)' },
-          { icon: Sparkles, label: ui('kpiAdaptiveCoverage', 'Adaptive Coverage'), value: `${emotionSummary.adaptiveCoveragePct}%`, color: 'var(--color-accent-blue)' },
-          { icon: TrendingUp, label: ui('kpiExperimentalGain', 'Experimental Gain'), value: fmt(prePost.exp.gainMean, 2), color: 'var(--color-success)' },
-          { icon: BarChart3, label: ui('kpiControlGain', 'Control Gain'), value: fmt(prePost.ctl.gainMean, 2), color: 'var(--color-amber)' },
-          { icon: Layers3, label: ui('kpiAdaptiveEvents', 'Adaptive Events'), value: interventionStats.timelineInterventions, color: 'var(--affect-confusion)' },
-        ].map(({ icon: Icon, label, value, color }) => (
-          <article key={label} className={styles.kpiCard}><div className={styles.kpiIcon} style={{ background: `${color}18`, color }}><Icon size={18} /></div><div><div className={styles.kpiValue}>{value}</div><div className={styles.kpiLabel}>{label}</div></div></article>
+          { icon: Users, label: ui('kpiParticipants', 'Participants'), value: totalParticipants, tone: 'teal' as const },
+          { icon: Gauge, label: ui('kpiAverageCompletion', 'Average Completion'), value: `${Math.round(avg(aggregates.map((r: any) => r.avgCompletionPct)))}%`, tone: 'indigo' as const },
+          { icon: Sparkles, label: ui('kpiAdaptiveCoverage', 'Adaptive Coverage'), value: `${emotionSummary.adaptiveCoveragePct}%`, tone: 'blue' as const },
+          { icon: TrendingUp, label: ui('kpiExperimentalGain', 'Experimental Gain'), value: fmt(prePost.exp.gainMean, 2), tone: 'success' as const },
+          { icon: BarChart3, label: ui('kpiControlGain', 'Control Gain'), value: fmt(prePost.ctl.gainMean, 2), tone: 'coral' as const },
+          { icon: Layers3, label: ui('kpiAdaptiveEvents', 'Adaptive Events'), value: interventionStats.timelineInterventions, tone: 'amber' as const },
+        ].map(({ icon: Icon, label, value, tone }) => (
+          <StatCard key={label} icon={Icon} value={value} label={label} tone={tone} />
         ))}
       </section>
 
@@ -1013,6 +1064,89 @@ export default function ResearchDashboard() {
                 )
               )}
             </article>
+          </div>
+          <div className={styles.dualGrid}>
+            {([
+              {
+                form: 'pre' as const,
+                rows: preResults,
+                title: ui('pretestResultsTitle', 'Pre-test results (الاختبار القبلي)'),
+                lead: ui('pretestResultsLead', 'Every learner who completed the pre-test, with dimension and total scores.'),
+                emptyTitle: 'research.dashboard.empty.pretestResultsTitle',
+                emptyTitleFallback: 'No pre-test submissions yet.',
+                emptyBody: 'research.dashboard.empty.pretestResultsBody',
+                emptyBodyFallback: 'Results appear here as soon as learners complete the pre-test.',
+              },
+              {
+                form: 'post' as const,
+                rows: postResults,
+                title: ui('posttestResultsTitle', 'Post-test results (الاختبار البعدي)'),
+                lead: ui('posttestResultsLead', 'Every learner who completed the post-test, with dimension and total scores.'),
+                emptyTitle: 'research.dashboard.empty.posttestResultsTitle',
+                emptyTitleFallback: 'No post-test submissions yet.',
+                emptyBody: 'research.dashboard.empty.posttestResultsBody',
+                emptyBodyFallback: 'Results appear here as soon as learners complete the post-test.',
+              },
+            ]).map((panel) => (
+              <article key={panel.form} className={styles.reportCard}>
+                <div className={styles.panelHead}>
+                  <div>
+                    <h3>{panel.title}</h3>
+                    <p className={styles.cardLead}>{panel.lead}</p>
+                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() =>
+                      void handleServerExport(`assessment-${panel.form}`, () =>
+                        researchApi.exportAssessmentResults(panel.form),
+                      )
+                    }
+                    disabled={exporting !== null || panel.rows.length === 0}
+                  >
+                    <Download size={13} />
+                    {ui('exportExcel', 'Export Excel')}
+                  </button>
+                </div>
+                {panel.rows.length > 0 ? (
+                  <div className="table-scroll">
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>{ui('thParticipant', 'Participant')}</th>
+                          <th>{ui('thCohort', 'Cohort')}</th>
+                          <th>{ui('thScore', 'Score')}</th>
+                          <th>{ui('thCorrect', 'Correct')}</th>
+                          <th>{ui('thSubmitted', 'Submitted')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {panel.rows.slice(0, 18).map((row: any) => (
+                          <tr
+                            key={row.assessmentId}
+                            className={styles.clickRow}
+                            onClick={() => navigate(`/research-admin/participants/${row.participantId}`)}
+                          >
+                            <td>{row.participantId}</td>
+                            <td>
+                              <span className={`badge ${row.cohort === 'experimental' ? 'badge-teal' : 'badge-muted'}`}>
+                                {cohortLabel(row.cohort)}
+                              </span>
+                            </td>
+                            <td>{row.totalScore === null || row.totalScore === undefined ? '--' : `${Math.round(Number(row.totalScore))}%`}</td>
+                            <td>
+                              {row.correctCount ?? '--'}/{row.questionCount ?? '--'}
+                            </td>
+                            <td>{row.submittedAt ? fmtTime(row.submittedAt) : '--'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  renderEmptyPanel(panel.emptyTitle, panel.emptyTitleFallback, panel.emptyBody, panel.emptyBodyFallback)
+                )}
+              </article>
+            ))}
           </div>
         </section>
 
