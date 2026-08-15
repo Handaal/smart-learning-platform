@@ -39,6 +39,8 @@ CREATE TYPE assessment_source_type AS ENUM ('pre', 'mid', 'post', 'transfer');
 
 CREATE TYPE competency_source_type AS ENUM ('assessment', 'artifact', 'simulation');
 
+CREATE TYPE content_type_type AS ENUM ('TEXT', 'VISUAL', 'VIDEO', 'ASSESSMENT');
+
 -- ---- CORE TABLES -------------------------------------------
 
 -- Learner — pseudonymized research identity
@@ -155,6 +157,24 @@ CREATE TABLE episode (
   lesson_type     VARCHAR(40) NOT NULL DEFAULT 'guided',
   status          publish_status_type NOT NULL DEFAULT 'published'
 );
+
+-- Learning content blocks attached to an episode.
+-- Mirrors the LearningContent model in backend/prisma/schema.prisma; the
+-- `lesson_contents` view further down selects from this table.
+CREATE TABLE learning_content (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  episode_id      VARCHAR(20) NOT NULL REFERENCES episode(id),
+  content_type    content_type_type NOT NULL,
+  adaptive_tag    affect_state_type,
+  content_data    JSONB NOT NULL,
+  scaffold_level  SMALLINT NOT NULL DEFAULT 3 CHECK (scaffold_level BETWEEN 1 AND 4),
+  is_enrichment   BOOLEAN NOT NULL DEFAULT FALSE,
+  sequence_order  SMALLINT NOT NULL DEFAULT 0,
+  status          publish_status_type NOT NULL DEFAULT 'published'
+);
+
+CREATE INDEX idx_learning_content_episode
+  ON learning_content (episode_id, sequence_order);
 
 -- Branching node registry (decision points)
 CREATE TABLE branching_node (
