@@ -528,7 +528,7 @@ CREATE TABLE IF NOT EXISTS scenario_action (
 CREATE TABLE IF NOT EXISTS engagement_snapshot (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_id       VARCHAR(20) NOT NULL,
-  session_id           TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE,
+  session_id           UUID NOT NULL REFERENCES session(id) ON DELETE CASCADE,
   module_id            VARCHAR(20),
   lesson_id            VARCHAR(40),
   activity_id          VARCHAR(80),
@@ -545,7 +545,7 @@ CREATE TABLE IF NOT EXISTS engagement_snapshot (
 CREATE TABLE IF NOT EXISTS intervention_log (
   id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_id             VARCHAR(20) NOT NULL,
-  session_id                 TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE,
+  session_id                 UUID NOT NULL REFERENCES session(id) ON DELETE CASCADE,
   module_id                  VARCHAR(20),
   lesson_id                  VARCHAR(40),
   activity_id                VARCHAR(80),
@@ -563,7 +563,7 @@ CREATE TABLE IF NOT EXISTS intervention_log (
 CREATE TABLE IF NOT EXISTS activity_log (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_id VARCHAR(20) NOT NULL,
-  session_id     TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE,
+  session_id     UUID NOT NULL REFERENCES session(id) ON DELETE CASCADE,
   module_id      VARCHAR(20),
   lesson_id      VARCHAR(40),
   activity_id    VARCHAR(80),
@@ -576,9 +576,9 @@ CREATE TABLE IF NOT EXISTS activity_log (
 
 CREATE TABLE IF NOT EXISTS assessment_attempt (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  assessment_id   TEXT NOT NULL REFERENCES assessment(id) ON DELETE CASCADE,
+  assessment_id   UUID NOT NULL REFERENCES assessment(id) ON DELETE CASCADE,
   participant_id  VARCHAR(20) NOT NULL,
-  session_id      TEXT REFERENCES session(id) ON DELETE SET NULL,
+  session_id      UUID REFERENCES session(id) ON DELETE SET NULL,
   attempt_index   SMALLINT NOT NULL DEFAULT 1,
   started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   submitted_at    TIMESTAMPTZ,
@@ -602,7 +602,7 @@ CREATE TABLE IF NOT EXISTS badge (
 CREATE TABLE IF NOT EXISTS timeline_heatmap (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_id     VARCHAR(20) NOT NULL,
-  session_id         TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE,
+  session_id         UUID NOT NULL REFERENCES session(id) ON DELETE CASCADE,
   module_id          VARCHAR(20),
   lesson_id          VARCHAR(40),
   activity_id        VARCHAR(80),
@@ -618,7 +618,7 @@ CREATE TABLE IF NOT EXISTS timeline_heatmap (
 CREATE TABLE IF NOT EXISTS admin_simulation (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_id     VARCHAR(20),
-  session_id         TEXT REFERENCES session(id) ON DELETE SET NULL,
+  session_id         UUID REFERENCES session(id) ON DELETE SET NULL,
   lesson_id          VARCHAR(40),
   activity_id        VARCHAR(80),
   simulated_emotion  VARCHAR(40) NOT NULL,
@@ -633,7 +633,7 @@ CREATE TABLE IF NOT EXISTS admin_simulation (
 CREATE TABLE IF NOT EXISTS research_export (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   participant_id VARCHAR(20),
-  session_id     TEXT REFERENCES session(id) ON DELETE SET NULL,
+  session_id     UUID REFERENCES session(id) ON DELETE SET NULL,
   export_type    VARCHAR(80) NOT NULL,
   export_format  VARCHAR(20) NOT NULL,
   requested_by   VARCHAR(100),
