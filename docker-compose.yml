@@ -1,7 +1,7 @@
 services:
   # ── PostgreSQL + TimescaleDB ─────────────────────────────────
   db:
-    image: timescale/timescaledb:latest-pg15
+    image: timescale/timescaledb:2.28.3-pg15
     container_name: step_db
     restart: unless-stopped
     environment:
@@ -21,6 +21,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      # First boot runs schema.sql + seed.sql before accepting connections.
+      start_period: 60s
 
   # ── Redis ────────────────────────────────────────────────────
   redis:
@@ -43,7 +45,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: step-backend:latest
     container_name: step_backend
     restart: unless-stopped
     depends_on:
@@ -86,7 +87,6 @@ services:
       args:
         # Empty => the app uses relative /api and /ws on its own origin.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
-    image: step-frontend:latest
     container_name: step_frontend
     restart: unless-stopped
     depends_on:

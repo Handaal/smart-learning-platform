@@ -23,7 +23,10 @@ CREATE TYPE learning_pref_type AS ENUM (
   'reading_first', 'video_first', 'simulation_first', 'discussion_first', 'no_preference'
 );
 
-CREATE TYPE scaffold_level_type AS SMALLINT;  -- 1 (min support) → 4 (max support)
+-- 1 (min support) → 4 (max support). A domain, not a type: CREATE TYPE ... AS
+-- only accepts ENUM/RANGE/composite, so the old CREATE TYPE form was a syntax
+-- error that aborted this whole script before any table was created.
+CREATE DOMAIN scaffold_level_type AS SMALLINT CHECK (VALUE BETWEEN 1 AND 4);
 
 CREATE TYPE reflection_depth_type AS ENUM ('surface', 'analytical', 'critical');
 

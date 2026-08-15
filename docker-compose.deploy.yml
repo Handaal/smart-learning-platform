@@ -9,7 +9,7 @@
 # Before pasting, replace every CHANGE_ME below.
 #   REGISTRY_OWNER  -> your GitHub owner, lowercase (e.g. handaal)
 #   POSTGRES_PASSWORD / JWT_SECRET -> real secrets (openssl rand -hex 48)
-#   CORS_ORIGIN     -> http://<vps-ip>  or  https://your-domain
+#   CORS_ORIGIN     -> http://<vps-ip>:8080  or  https://your-domain
 #
 # For SSH-based deploys that build on the box, use docker-compose.yml instead.
 # ─────────────────────────────────────────────────────────────
@@ -29,6 +29,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      # First boot runs schema.sql + seed.sql before accepting connections.
+      start_period: 60s
 
   redis:
     image: redis:7-alpine
@@ -79,8 +81,10 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    # Host port 80 is often already taken on a Hostinger VPS (panel nginx).
+    # Use 8080 and put a host reverse proxy in front for TLS.
     ports:
-      - "80:80"
+      - "8080:80"
 
 volumes:
   db_data:

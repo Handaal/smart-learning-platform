@@ -5,7 +5,7 @@
 # into /docker-entrypoint-initdb.d. They ship inside the image instead.
 #
 # Scripts run in filename order, once, on first boot of an empty data volume.
-FROM timescale/timescaledb:latest-pg15
+FROM timescale/timescaledb:2.28.3-pg15
 
 COPY schema.sql /docker-entrypoint-initdb.d/01_schema.sql
 COPY seed.sql   /docker-entrypoint-initdb.d/02_seed.sql
