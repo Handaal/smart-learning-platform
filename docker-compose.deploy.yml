@@ -15,7 +15,7 @@
 # ─────────────────────────────────────────────────────────────
 services:
   db:
-    image: ghcr.io/CHANGE_ME_REGISTRY_OWNER/step-db:latest
+    image: timescale/timescaledb:2.28.3-pg15
     container_name: step_db
     restart: unless-stopped
     environment:
@@ -29,7 +29,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      # First boot runs schema.sql + seed.sql before accepting connections.
       start_period: 60s
 
   redis:
@@ -61,6 +60,9 @@ services:
       DATABASE_URL: postgresql://step_user:CHANGE_ME_POSTGRES_PASSWORD@db:5432/step_db
       REDIS_URL:    redis://redis:6379
       JWT_SECRET:   CHANGE_ME_JWT_SECRET
+      # Set to "true" for the first deploy to load reference data, then
+      # back to "false". The seed uses upserts, so re-running is harmless.
+      SEED_ON_START: "true"
       CORS_ORIGIN:  CHANGE_ME_PUBLIC_ORIGIN
     expose:
       - "3001"

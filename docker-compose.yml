@@ -10,8 +10,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     # Loopback-only: Docker publishes bypass ufw, so a bare "5433:5432"
     # would expose Postgres to the public internet on a Hostinger VPS.
     ports:
@@ -21,7 +19,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      # First boot runs schema.sql + seed.sql before accepting connections.
       start_period: 60s
 
   # ── Redis ────────────────────────────────────────────────────
@@ -62,6 +59,8 @@ services:
       # Same-origin deployment (nginx proxies /api), so this only matters
       # if you point a different host at the API.
       CORS_ORIGIN:  ${CORS_ORIGIN:-http://localhost}
+      # true => run the Prisma seed (idempotent upserts) on container start.
+      SEED_ON_START:      ${SEED_ON_START:-false}
       AI_SERVICE_URL:     ${AI_SERVICE_URL:-http://ai-services:8000}
       AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY:-dev-key}
     # Not published publicly — reachable only through the frontend's nginx.
