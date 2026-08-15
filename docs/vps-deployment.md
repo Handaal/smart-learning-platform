@@ -22,7 +22,30 @@ The compose file now builds `frontend/Dockerfile`: a static Vite build served
 by nginx, which also reverse-proxies `/api`, `/uploads`, and `/ws` to the
 backend. Everything is one origin, so there is no CORS config to get wrong.
 
-## Deploy
+## Two deploy paths — pick one
+
+### A. Hostinger Docker Manager (paste-in panel)
+
+The panel has **no repo checkout on the server**. It cannot build from a
+`build:` context, and it cannot bind-mount `./database/schema.sql`. A compose
+file that relies on either will come up with missing images and an empty
+database. Use `docker-compose.deploy.yml`, which is registry-images-only.
+
+1. Push to `main`. `.github/workflows/publish-images.yml` builds and pushes
+   `step-db`, `step-backend`, and `step-frontend` to GHCR.
+2. Make the three packages **public** (GitHub → your profile → Packages →
+   each package → Package settings → Change visibility). Otherwise the VPS
+   needs a registry login the panel can't supply.
+3. Copy `docker-compose.deploy.yml`, replace every `CHANGE_ME_*`, paste it
+   into the Docker Manager, deploy.
+4. Redeploy after a code change: wait for the workflow, then hit
+   **Recreate/Update** in the panel so it re-pulls `:latest`.
+
+The schema lives in the `step-db` image (`database/Dockerfile`), so changes to
+`schema.sql` require a new image *and* an empty `db_data` volume to take
+effect — initdb scripts only run on first boot.
+
+### B. SSH onto the VPS and build there
 
 ```bash
 git clone <repo> step && cd step
@@ -33,7 +56,7 @@ Fill in `.env` — `POSTGRES_PASSWORD` and `JWT_SECRET` are mandatory
 (`openssl rand -hex 48` for the secret). Then:
 
 ```bash
-docker compose build && docker compose up -d
+docker compose up -d --build
 ```
 
 The app is on `http://<vps-ip>:80`. `ai-services` is excluded by default;

@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────
+# PASTE-INTO-HOSTINGER compose file.
+#
+# The Docker Manager panel has no repo checkout on the server, so this file
+# is fully self-contained: registry images only, no build contexts, no bind
+# mounts to host paths. Images are published by
+# .github/workflows/publish-images.yml on every push to main.
+#
+# Before pasting, replace every CHANGE_ME below.
+#   REGISTRY_OWNER  -> your GitHub owner, lowercase (e.g. handaal)
+#   POSTGRES_PASSWORD / JWT_SECRET -> real secrets (openssl rand -hex 48)
+#   CORS_ORIGIN     -> http://<vps-ip>  or  https://your-domain
+#
+# For SSH-based deploys that build on the box, use docker-compose.yml instead.
+# ─────────────────────────────────────────────────────────────
+services:
+  db:
+    image: ghcr.io/CHANGE_ME_REGISTRY_OWNER/step-db:latest
+    container_name: step_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       step_db
+      POSTGRES_USER:     step_user
+      POSTGRES_PASSWORD: CHANGE_ME_POSTGRES_PASSWORD
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U step_user -d step_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: step_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    image: ghcr.io/CHANGE_ME_REGISTRY_OWNER/step-backend:latest
+    container_name: step_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV:     production
+      PORT:         3001
+      LOG_LEVEL:    info
+      DATABASE_URL: postgresql://step_user:CHANGE_ME_POSTGRES_PASSWORD@db:5432/step_db
+      REDIS_URL:    redis://redis:6379
+      JWT_SECRET:   CHANGE_ME_JWT_SECRET
+      CORS_ORIGIN:  CHANGE_ME_PUBLIC_ORIGIN
+    expose:
+      - "3001"
+    volumes:
+      - backend_logs:/app/logs
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+
+  # nginx: serves the static build and proxies /api, /uploads, /ws to backend.
+  frontend:
+    image: ghcr.io/CHANGE_ME_REGISTRY_OWNER/step-frontend:latest
+    container_name: step_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  db_data:
+  redis_data:
+  backend_logs:
+  uploads_data:
