@@ -1,0 +1,70 @@
+# Deploying STEP on a Hostinger VPS
+
+## Why the frontend was crash-looping
+
+The old `docker-compose.yml` ran the frontend as a bare `node:20-alpine`
+container executing `npm install && npm run dev` against a bind-mounted
+source tree. That is a development setup and it fails on a VPS:
+
+- `npm install` re-ran on every container start (~700 MB of MediaPipe /
+  face-api deps). On a 2–4 GB VPS it OOM-killed, the container exited, and
+  `restart: unless-stopped` restarted it — the "restarting" loop.
+- `npm run dev` is `vite --host 127.0.0.1`; the appended `-- --host 0.0.0.0`
+  left two conflicting `--host` flags.
+- `vite.config.ts` sets `watch.usePolling` with a 150 ms interval, which
+  pegs a CPU core for nothing on a server.
+- `VITE_API_BASE_URL` was hardcoded to `http://127.0.0.1:3001`, which resolves
+  to the *visitor's* machine, not the server.
+- `frontend/Dockerfile` (the real production image) was never referenced by
+  compose at all.
+
+The compose file now builds `frontend/Dockerfile`: a static Vite build served
+by nginx, which also reverse-proxies `/api`, `/uploads`, and `/ws` to the
+backend. Everything is one origin, so there is no CORS config to get wrong.
+
+## Deploy
+
+```bash
+git clone <repo> step && cd step
+cp .env.example .env
+```
+
+Fill in `.env` — `POSTGRES_PASSWORD` and `JWT_SECRET` are mandatory
+(`openssl rand -hex 48` for the secret). Then:
+
+```bash
+docker compose build && docker compose up -d
+```
+
+The app is on `http://<vps-ip>:80`. `ai-services` is excluded by default;
+bring it in with `docker compose --profile ai up -d`.
+
+## Notes
+
+- Postgres and Redis publish on `127.0.0.1` only. Docker's published ports
+  bypass `ufw`, so binding them to `0.0.0.0` would expose the database to the
+  internet.
+- The backend is not published to the host at all — nginx reaches it over the
+  compose network.
+- The DB schema loads from `database/schema.sql` + `seed.sql` **only on the
+  first boot** of an empty `db_data` volume. To re-seed:
+  `docker compose down -v` (this deletes all data).
+- Building the frontend needs ~1.5 GB RAM. If the VPS has 2 GB or less, add
+  swap first: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap
+  /swapfile && swapon /swapfile`.
+- Redeploy after a code change: `docker compose build && docker compose up -d`.
+
+## TLS
+
+Point a domain at the VPS, set `HTTP_PORT=8080` in `.env`, and put Caddy or
+nginx + certbot on the host proxying 443 → `127.0.0.1:8080`. Set
+`CORS_ORIGIN=https://your-domain` too. WebSocket upgrade headers must be
+forwarded for `/ws/emotion` to work.
+
+## Local development
+
+The old HMR workflow is preserved as an override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```

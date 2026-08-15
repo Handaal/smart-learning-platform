@@ -1,0 +1,34 @@
+# Local development override — live Vite dev server with HMR.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# Do NOT use this on the VPS: `npm install` on every container start is the
+# reason the frontend container crash-looped there.
+services:
+  db:
+    ports:
+      - "5433:5432"
+
+  backend:
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV:    development
+      LOG_LEVEL:   debug
+      CORS_ORIGIN: http://localhost:5173
+
+  frontend:
+    build: !reset null
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_BASE_URL: http://127.0.0.1:3001
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - ./backend/src/policy:/backend/src/policy:ro
+    ports: !override
+      - "5173:5173"
+
+volumes:
+  frontend_node_modules:

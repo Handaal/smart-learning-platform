@@ -5,41 +5,45 @@ services:
     container_name: step_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       step_db
-      POSTGRES_USER:     step_user
-      POSTGRES_PASSWORD: step_pass
+      POSTGRES_DB:       ${POSTGRES_DB:-step_db}
+      POSTGRES_USER:     ${POSTGRES_USER:-step_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    # Loopback-only: Docker publishes bypass ufw, so a bare "5433:5432"
+    # would expose Postgres to the public internet on a Hostinger VPS.
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U step_user -d step_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-step_user} -d ${POSTGRES_DB:-step_db}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   # ── Redis ────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: step_redis
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
-      retries: 3
+      retries: 5
 
   # ── Backend API ──────────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: step-backend:latest
     container_name: step_backend
     restart: unless-stopped
     depends_on:
@@ -48,27 +52,53 @@ services:
       redis:
         condition: service_healthy
     environment:
-      NODE_ENV:         production
-      PORT:             3001
-      DATABASE_URL:     postgresql://step_user:step_pass@db:5432/step_db
-      REDIS_URL:        redis://redis:6379
-      JWT_SECRET:       ${JWT_SECRET}
-      CORS_ORIGIN:      ${CORS_ORIGIN:-http://localhost:5173}
-      AI_SERVICE_URL:   http://ai-services:8000
-      AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY}
-    ports:
-      - "3001:3001"
+      NODE_ENV:  production
+      PORT:      3001
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-step_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-step_db}
+      REDIS_URL:    redis://redis:6379
+      JWT_SECRET:   ${JWT_SECRET:?JWT_SECRET is required}
+      # Same-origin deployment (nginx proxies /api), so this only matters
+      # if you point a different host at the API.
+      CORS_ORIGIN:  ${CORS_ORIGIN:-http://localhost}
+      AI_SERVICE_URL:     ${AI_SERVICE_URL:-http://ai-services:8000}
+      AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY:-dev-key}
+    # Not published publicly — reachable only through the frontend's nginx.
+    expose:
+      - "3001"
     volumes:
       - backend_logs:/app/logs
       - uploads_data:/app/uploads
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health/ready >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/api/health >/dev/null 2>&1 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 6
+      start_period: 40s
 
-  # ── AI Services ──────────────────────────────────────────────
+  # ── Frontend (static production build served by nginx) ───────
+  # Built from the repo root because the build also needs
+  # backend/src/policy (the @policy alias in vite.config.ts).
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Empty => the app uses relative /api and /ws on its own origin.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
+    image: step-frontend:latest
+    container_name: step_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${HTTP_PORT:-80}:80"
+
+  # ── AI Services (optional) ───────────────────────────────────
+  # Excluded from the default deploy. Enable with:
+  #   docker compose --profile ai up -d
   ai-services:
+    profiles: ["ai"]
     build:
       context: ./ai-services
       dockerfile: Dockerfile
@@ -78,41 +108,13 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://step_user:step_pass@db:5432/step_db
-      API_KEY:      ${AI_SERVICE_API_KEY}
-    ports:
-      - "8000:8000"
-
-  # ── Frontend (live Vite dev server — always serves current source) ──
-  # Source is bind-mounted, so code changes appear immediately (with HMR)
-  # and never require an image rebuild. For a production static build,
-  # use frontend/Dockerfile instead.
-  frontend:
-    image: node:20-alpine
-    container_name: step_frontend
-    restart: unless-stopped
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    depends_on:
-      - backend
-    environment:
-      # Browser runs on the host, so it reaches the published backend port directly.
-      VITE_API_BASE_URL: http://127.0.0.1:3001
-    volumes:
-      - ./frontend:/app                       # live source (HMR)
-      - frontend_node_modules:/app/node_modules  # container-native deps (avoids Windows binaries)
-      - ./backend/src/policy:/backend/src/policy:ro  # @policy alias source
-    ports:
-      - "5173:5173"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5173/ >/dev/null 2>&1 || exit 1"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
+      DATABASE_URL: postgresql://${POSTGRES_USER:-step_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-step_db}
+      API_KEY:      ${AI_SERVICE_API_KEY:-dev-key}
+    expose:
+      - "8000"
 
 volumes:
   db_data:
   redis_data:
   backend_logs:
   uploads_data:
-  frontend_node_modules:
