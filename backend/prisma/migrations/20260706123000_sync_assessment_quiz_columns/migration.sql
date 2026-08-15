@@ -2,6 +2,17 @@
 -- linkage columns used by the structured pre/post test flow were present in
 -- the Prisma schema but missing from the database.
 
+-- AssessmentDimension was introduced via `prisma db push` and so was never
+-- created by a migration. On a live database it already exists; on a fresh one
+-- it does not, which broke `migrate deploy` from scratch. Create it if absent.
+DO $$
+BEGIN
+  CREATE TYPE "AssessmentDimension" AS ENUM ('s1', 's2', 's3', 's4', 's5');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END
+$$;
+
 ALTER TABLE "quiz" ADD COLUMN IF NOT EXISTS "course_key" TEXT;
 
 ALTER TABLE "quiz_question" ADD COLUMN IF NOT EXISTS "dimension" "AssessmentDimension";
