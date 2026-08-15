@@ -7,7 +7,7 @@
 set -e
 
 echo "[entrypoint] applying database migrations..."
-npx prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
 # Reference data (modules, episodes, content, quizzes). The seed script uses
 # upserts throughout, so re-running it is safe. Off by default: set
