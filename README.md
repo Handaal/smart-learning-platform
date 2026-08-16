@@ -73,9 +73,8 @@ docker compose up db redis -d
 cd backend
 cp .env.example .env          # edit JWT_SECRET and DB credentials
 npm install
-npx prisma migrate dev --name init
+npx prisma migrate deploy
 npm run db:seed               # loads all modules, episodes, prompts
-node database/timescale_setup.sql  # or run via psql (see below)
 npm run dev                   # starts on http://localhost:3001
 ```
 
@@ -184,9 +183,8 @@ smart-training-emotion-platform/
 │   ├── train.py           # ML training pipeline
 │   └── models/            # .pkl files (git-ignored)
 ├── database/
-│   ├── schema.sql         # Raw SQL reference
-│   ├── seed.sql           # Reference seed data
-│   └── timescale_setup.sql # Hypertables + indexes
+│   └── timescale_setup.sql # Hypertables + indexes (run once after first deploy)
+│       # schema.sql / seed.sql here are pre-Prisma leftovers — unused
 ├── tests/
 │   ├── unit/              # AffectClassifier.test.ts, AdaptiveEngine.test.ts
 │   └── integration/       # auth.api.test.ts

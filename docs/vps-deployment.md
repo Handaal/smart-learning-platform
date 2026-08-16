@@ -27,13 +27,14 @@ backend. Everything is one origin, so there is no CORS config to get wrong.
 ### A. Hostinger Docker Manager (paste-in panel)
 
 The panel has **no repo checkout on the server**. It cannot build from a
-`build:` context, and it cannot bind-mount `./database/schema.sql`. A compose
-file that relies on either will come up with missing images and an empty
-database. Use `docker-compose.deploy.yml`, which is registry-images-only.
+`build:` context. A compose file that relies on one will come up with
+missing images. Use `docker-compose.deploy.yml`, which is registry-images-only
+(the `db` service is the stock `timescale/timescaledb` image — nothing to
+build there).
 
 1. Push to `main`. `.github/workflows/publish-images.yml` builds and pushes
-   `step-db`, `step-backend`, and `step-frontend` to GHCR.
-2. Make the three packages **public** (GitHub → your profile → Packages →
+   `step-backend` and `step-frontend` to GHCR.
+2. Make both packages **public** (GitHub → your profile → Packages →
    each package → Package settings → Change visibility). Otherwise the VPS
    needs a registry login the panel can't supply.
 3. Copy `docker-compose.deploy.yml`, replace every `CHANGE_ME_*`, paste it
@@ -41,9 +42,11 @@ database. Use `docker-compose.deploy.yml`, which is registry-images-only.
 4. Redeploy after a code change: wait for the workflow, then hit
    **Recreate/Update** in the panel so it re-pulls `:latest`.
 
-The schema lives in the `step-db` image (`database/Dockerfile`), so changes to
-`schema.sql` require a new image *and* an empty `db_data` volume to take
-effect — initdb scripts only run on first boot.
+The schema is Prisma migrations baked into the `step-backend` image
+(`backend/prisma/migrations`). The backend container runs
+`prisma migrate deploy` on every start — it's a no-op once the DB is current,
+so redeploying is always safe. A new schema change just needs a new
+`step-backend` image; the `db_data` volume does not need to be wiped.
 
 ### B. SSH onto the VPS and build there
 
@@ -69,9 +72,19 @@ bring it in with `docker compose --profile ai up -d`.
   internet.
 - The backend is not published to the host at all — nginx reaches it over the
   compose network.
-- The DB schema loads from `database/schema.sql` + `seed.sql` **only on the
-  first boot** of an empty `db_data` volume. To re-seed:
-  `docker compose down -v` (this deletes all data).
+- The DB schema is Prisma migrations, applied by the backend container on
+  every start (`prisma migrate deploy` — safe to re-run). Reference data
+  (modules, episodes, quizzes) only loads when `SEED_ON_START=true`; the seed
+  uses upserts, so re-running it is harmless. `database/schema.sql` and
+  `database/seed.sql` are leftovers from before the move to Prisma and are not
+  used by any Dockerfile or compose file — ignore them.
+- TimescaleDB hypertables, continuous aggregates, and compression are **not**
+  set up automatically. After the first successful deploy, run
+  `database/timescale_setup.sql` once against the database (from the repo
+  checkout, path B only):
+  `docker compose exec -T db psql -U step_user -d step_db < database/timescale_setup.sql`
+  It's idempotent (`IF NOT EXISTS` throughout), so re-running it after future
+  deploys is harmless too.
 - Building the frontend needs ~1.5 GB RAM. If the VPS has 2 GB or less, add
   swap first: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap
   /swapfile && swapon /swapfile`.
