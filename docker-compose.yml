@@ -61,6 +61,8 @@ services:
       CORS_ORIGIN:  ${CORS_ORIGIN:-http://localhost}
       # true => run the Prisma seed (idempotent upserts) on container start.
       SEED_ON_START:      ${SEED_ON_START:-false}
+      SEED_DEMO_USERS:    ${SEED_DEMO_USERS:-false}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD-}
       AI_SERVICE_URL:     ${AI_SERVICE_URL:-http://ai-services:8000}
       AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY:-dev-key}
     # Not published publicly — reachable only through the frontend's nginx.

@@ -9,7 +9,9 @@
 # Before pasting, replace every CHANGE_ME below.
 #   REGISTRY_OWNER  -> your GitHub owner, lowercase (e.g. handaal)
 #   POSTGRES_PASSWORD / JWT_SECRET -> real secrets (openssl rand -hex 48)
-#   CORS_ORIGIN     -> http://<vps-ip>:8080  or  https://your-domain
+#   CORS_ORIGIN     -> https://<hostname>  (must match the Traefik Host rule)
+#   PUBLIC_HOSTNAME -> e.g. 203-0-113-45.sslip.io (free hostname, no domain
+#                      needed; sslip.io resolves it to that IP)
 #
 # For SSH-based deploys that build on the box, use docker-compose.yml instead.
 # ─────────────────────────────────────────────────────────────
@@ -63,6 +65,10 @@ services:
       # Set to "true" for the first deploy to load reference data, then
       # back to "false". The seed uses upserts, so re-running is harmless.
       SEED_ON_START: "true"
+      # Creates the three demo accounts (EXP…/CTL…/RADMIN…). Turn off once
+      # real accounts exist; set DEMO_USER_PASSWORD to avoid the repo default.
+      SEED_DEMO_USERS: "true"
+      DEMO_USER_PASSWORD: CHANGE_ME_DEMO_PASSWORD
       CORS_ORIGIN:  CHANGE_ME_PUBLIC_ORIGIN
     expose:
       - "3001"
@@ -87,6 +93,18 @@ services:
     # Use 8080 and put a host reverse proxy in front for TLS.
     ports:
       - "8080:80"
+    # Routed by the host Traefik (entrypoints web/websecure, resolver
+    # "letsencrypt"). exposedbydefault=false there, so traefik.enable is
+    # required. server.port is the port INSIDE the container (nginx), not the
+    # published 8080 — that stays as a direct fallback.
+    # Multiple hosts (Traefik v3): OR them, e.g.
+    #   Host(`a.com`) || Host(`www.a.com`). Comma-separated args are v2 only.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.step.rule=Host(`CHANGE_ME_PUBLIC_HOSTNAME`)"
+      - "traefik.http.routers.step.entrypoints=websecure"
+      - "traefik.http.routers.step.tls.certresolver=letsencrypt"
+      - "traefik.http.services.step.loadbalancer.server.port=80"
 
 volumes:
   db_data:

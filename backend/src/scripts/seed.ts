@@ -1332,11 +1332,19 @@ async function main() {
     });
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  // Demo accounts are skipped in production unless explicitly requested, so a
+  // deployed instance doesn't silently get known-password logins. Set
+  // SEED_DEMO_USERS=true to create them; DEMO_USER_PASSWORD overrides the
+  // default, which is public in this repo.
+  const seedDemoUsers =
+    process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_USERS === 'true';
+
+  if (seedDemoUsers) {
+    const demoPassword = process.env.DEMO_USER_PASSWORD ?? 'research2026';
     const demoUsers = [
-      { participantId: 'EXP00000000000000001', cohort: 'experimental' as const, password: 'research2026', role: 'learner' as const },
-      { participantId: 'CTL00000000000000001', cohort: 'control' as const, password: 'research2026', role: 'learner' as const },
-      { participantId: 'RADMIN00000000000001', cohort: 'control' as const, password: 'research2026', role: 'research_admin' as const },
+      { participantId: 'EXP00000000000000001', cohort: 'experimental' as const, password: demoPassword, role: 'learner' as const },
+      { participantId: 'CTL00000000000000001', cohort: 'control' as const, password: demoPassword, role: 'learner' as const },
+      { participantId: 'RADMIN00000000000001', cohort: 'control' as const, password: demoPassword, role: 'research_admin' as const },
     ];
 
     for (const user of demoUsers) {
