@@ -13,6 +13,19 @@ router.post(
   ctrl.uploadContentFile,
 );
 
+// Upload a SCORM 1.2 package (.zip) as interactive lesson content. The archive
+// is validated + extracted on disk and served statically from /uploads/scorm.
+router.post(
+  '/content/upload-scorm',
+  authenticate,
+  requireRole('research_admin'),
+  raw({
+    type: ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'],
+    limit: '100mb',
+  }),
+  ctrl.uploadScormPackage,
+);
+
 // List all modules with episode summaries
 router.get('/modules',             authenticate, ctrl.listModules);
 

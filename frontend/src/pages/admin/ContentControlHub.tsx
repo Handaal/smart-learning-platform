@@ -84,7 +84,7 @@ type ModuleRecord = {
 type LessonDetail = LessonRecord & {
   learningContents: Array<{
     id: string;
-    contentType: 'TEXT' | 'VISUAL' | 'VIDEO' | 'ASSESSMENT';
+    contentType: 'TEXT' | 'VISUAL' | 'VIDEO' | 'ASSESSMENT' | 'SCORM';
     adaptiveTag?: string | null;
     scaffoldLevel: number;
     isEnrichment: boolean;
@@ -246,6 +246,7 @@ function getContentBodyPreview(content: LessonDetail['learningContents'][number]
 }
 
 function getContentTypeLabel(type: LessonDetail['learningContents'][number]['contentType']) {
+  if (type === 'SCORM') return 'محتوى سكورم';
   return CONTENT_TYPE_OPTIONS.find((option) => option.value === type)?.label ?? type;
 }
 

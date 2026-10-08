@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { Activity, Camera, CameraOff, ScanFace } from 'lucide-react';
+import { Activity, Camera, CameraOff, Maximize2, Minimize2, ScanFace } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import type { EmotionTrackerDiagnostics } from '@/services/emotionTracker';
 import { emotionDisplayName } from '@/components/research/emotionPresentation';
@@ -14,6 +14,8 @@ type Props = {
   confidence: number;
   diagnostics: EmotionTrackerDiagnostics | null;
   streamReady: boolean;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 };
 
 function pct(value: number | undefined | null): number {
@@ -29,6 +31,8 @@ export default function LearnerEmotionPanel({
   confidence,
   diagnostics,
   streamReady,
+  collapsed,
+  onToggleCollapsed,
 }: Props) {
   const { t } = useI18n();
 
@@ -42,10 +46,36 @@ export default function LearnerEmotionPanel({
   const hasReading = cameraEnabled && (Boolean(diagnostics) || confidence > 0);
 
   return (
-    <aside className={styles.panel} aria-label={t('learner.session.emotionPanel.title')}>
+    <aside
+      className={`${styles.panel} ${collapsed ? styles.panelCollapsed : ''}`}
+      aria-label={t('learner.session.emotionPanel.title')}
+    >
+      {collapsed ? (
+        <button
+          type="button"
+          className={styles.expandFab}
+          onClick={onToggleCollapsed}
+          title={t('learner.session.emotionPanel.expand')}
+          aria-label={t('learner.session.emotionPanel.expand')}
+        >
+          <Camera size={16} />
+          {cameraEnabled ? <span className={styles.liveDot} aria-hidden /> : null}
+          <Maximize2 size={14} />
+        </button>
+      ) : null}
+
       <header className={styles.head}>
         <Camera size={16} />
         <h3>{t('learner.session.emotionPanel.title')}</h3>
+        <button
+          type="button"
+          className={styles.collapseBtn}
+          onClick={onToggleCollapsed}
+          title={t('learner.session.emotionPanel.collapse')}
+          aria-label={t('learner.session.emotionPanel.collapse')}
+        >
+          <Minimize2 size={14} />
+        </button>
       </header>
 
       <div className={styles.stage}>

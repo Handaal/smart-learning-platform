@@ -4,6 +4,7 @@ import { writeFile } from 'fs/promises';
 import path from 'path';
 import { prisma } from '../../lib/prisma';
 import { uploadsDir, ensureUploadsDir } from '../../lib/uploads';
+import { extractScormPackage, ScormError } from '../../lib/scorm';
 import type { AffectState } from '@prisma/client';
 import { sanitizeQuizForLearner } from '../quiz/quiz.controller';
 import {
@@ -303,6 +304,42 @@ export async function uploadContentFile(req: Request, res: Response, next: NextF
   } catch (e) { next(e); }
 }
 
+export async function uploadScormPackage(req: Request, res: Response, next: NextFunction) {
+  try {
+    const buffer = req.body;
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+      return res.status(400).json({ error: 'لم يتم استلام أي حزمة SCORM.' });
+    }
+
+    ensureUploadsDir();
+    try {
+      const result = extractScormPackage(buffer);
+      return res.status(201).json({
+        data: {
+          scormId: result.scormId,
+          url: result.launchUrl,
+          launchHref: result.launchHref,
+          title: result.title,
+          scormVersion: result.scormVersion,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ScormError) {
+        const message =
+          error.message === 'NOT_A_ZIP'
+            ? 'الملف المرفوع ليس حزمة مضغوطة (.zip) صالحة.'
+            : error.message === 'NO_MANIFEST'
+              ? 'الحزمة لا تحتوي على ملف imsmanifest.xml، لذا فهي ليست حزمة SCORM صالحة.'
+              : error.message === 'NO_LAUNCH'
+                ? 'تعذر تحديد صفحة البدء داخل حزمة SCORM.'
+                : 'تعذر معالجة حزمة SCORM.';
+        return res.status(400).json({ error: message });
+      }
+      throw error;
+    }
+  } catch (e) { next(e); }
+}
+
 export async function uploadContent(req: Request, res: Response, next: NextFunction) {
   try {
     const { episodeId, contentType, adaptiveTag, scaffoldLevel, isEnrichment, contentData, status } = req.body;
@@ -396,6 +433,8 @@ export async function createModule(req: Request, res: Response, next: NextFuncti
       estimatedDurationMin,
       sequenceOrder,
       status,
+      reflectionRequired,
+      reflectionMinWords,
     } = req.body;
     const module = await prisma.module.create({
       data: {
@@ -408,6 +447,10 @@ export async function createModule(req: Request, res: Response, next: NextFuncti
         estimatedDurationMin,
         sequenceOrder: sequenceOrder || 0,
         status: parsePublishStatus(status ?? 'draft'),
+        ...(typeof reflectionRequired === 'boolean' ? { reflectionRequired } : {}),
+        ...(Number.isFinite(Number(reflectionMinWords))
+          ? { reflectionMinWords: Math.max(1, Math.round(Number(reflectionMinWords))) }
+          : {}),
       },
     });
     res.status(201).json({ data: module });
@@ -425,6 +468,8 @@ export async function updateModule(req: Request, res: Response, next: NextFuncti
       estimatedDurationMin,
       sequenceOrder,
       status,
+      reflectionRequired,
+      reflectionMinWords,
     } = req.body;
     const module = await prisma.module.update({
       where: { id: req.params.moduleId },
@@ -437,6 +482,10 @@ export async function updateModule(req: Request, res: Response, next: NextFuncti
         estimatedDurationMin,
         sequenceOrder,
         status: status ? parsePublishStatus(status) : undefined,
+        reflectionRequired: typeof reflectionRequired === 'boolean' ? reflectionRequired : undefined,
+        reflectionMinWords: Number.isFinite(Number(reflectionMinWords))
+          ? Math.max(1, Math.round(Number(reflectionMinWords)))
+          : undefined,
       },
     });
     res.json({ data: module });

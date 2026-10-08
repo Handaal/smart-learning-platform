@@ -112,6 +112,31 @@
   font-size: 0.95rem;
 }
 
+.scormFrameWrap {
+  position: relative;
+  width: 100%;
+}
+
+.scormFrame {
+  width: 100%;
+  min-height: clamp(420px, 72vh, 820px);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 22px;
+  background: var(--color-surface);
+  display: block;
+}
+
+.scormLoading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: var(--color-surface-2);
+  color: var(--color-text-3);
+  font-size: 0.95rem;
+}
+
 .assessmentCard {
   display: grid;
   gap: 16px;

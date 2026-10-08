@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, CircleHelp, ClipboardList, Gauge, ListChecks, XCircle } from 'lucide-react';
 import { ApiError, assessmentApi } from '@/services/api';
 import { useI18n } from '@/i18n';
@@ -229,10 +230,22 @@ export default function AssessmentPage() {
   const { form } = useParams<{ form: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const autoStartAttemptedRef = useRef(false);
   const { language } = useI18n();
 
   const formType: FormType = form === 'post' ? 'post' : 'pre';
+
+  // After an assessment is recorded the learner's journey stage, progress
+  // summary, and next-suggested content all change on the server. Those live in
+  // cached React Query entries, so without invalidating them the modules /
+  // dashboard screens only update after a manual page refresh. Invalidate every
+  // dependent query so the next suggested content appears automatically.
+  function refreshJourneyCaches() {
+    for (const key of [['journey'], ['progress'], ['sessions'], ['modules'], ['assessments']]) {
+      void queryClient.invalidateQueries({ queryKey: key });
+    }
+  }
   const copy = useMemo(() => getLocalizedAssessmentCopy(language, formType), [formType, language]);
 
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
@@ -270,6 +283,7 @@ export default function AssessmentPage() {
       }
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 409 && error.code === 'DUPLICATE_FORM') {
+        refreshJourneyCaches();
         navigate(formType === 'pre' ? '/modules' : '/completion', { replace: true });
         return;
       }
@@ -334,8 +348,12 @@ export default function AssessmentPage() {
       }
 
       setSubmittedResult(payload);
+      // The assessment is now recorded on the server — refresh the journey so
+      // the learner sees the next suggested content without a manual refresh.
+      refreshJourneyCaches();
     } catch (error: unknown) {
       if (error instanceof ApiError && error.code === 'ALREADY_COMPLETE') {
+        refreshJourneyCaches();
         navigate(formType === 'pre' ? '/modules' : '/completion', { replace: true });
         return;
       }

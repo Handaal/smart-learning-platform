@@ -89,8 +89,13 @@ export default function Sidebar({ open, onClose }: Props) {
     <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}>
       <div className={styles.brandRow}>
         <div className={styles.brand}>
-          <span className={styles.logo}>STEP</span>
-          <span className={styles.logoSub}>{t('app.brand.platformName')}</span>
+          <img
+            className={styles.logo}
+            src="/affectpath-logo.png"
+            alt={t('app.brand.platformName')}
+            width={160}
+            height={120}
+          />
         </div>
 
         <button type="button" className={styles.mobileClose} onClick={onClose} aria-label={t('layout.sidebar.closeNavigation')}>

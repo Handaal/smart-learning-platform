@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Brain, Check, CheckCircle2, Lightbulb, PenLine, Target } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
-import { reflectionApi, sessionApi } from '@/services/api';
+import { reflectionApi, scenarioApi, sessionApi } from '@/services/api';
 import { USE_MOCK } from '@/services/mockData';
 import StatusBadge, { type BadgeStatus } from '@/components/ui/StatusBadge';
 import styles from './ReflectionPage.module.css';
@@ -60,6 +60,14 @@ export default function ReflectionPage() {
 
   const moduleId = USE_MOCK ? 'M1' : String((sessionData?.data as { moduleId?: string } | undefined)?.moduleId ?? 'M1');
 
+  const { data: moduleData } = useQuery({
+    queryKey: ['module', moduleId],
+    queryFn: () => scenarioApi.getModule(moduleId),
+    enabled: Boolean(moduleId) && !USE_MOCK,
+  });
+  const moduleSettings = (moduleData?.data as { reflectionMinWords?: number; reflectionRequired?: boolean } | undefined) ?? undefined;
+  const reflectionRequired = moduleSettings?.reflectionRequired !== false;
+
   const promptMap = useMemo<Record<string, ModulePrompt>>(() => {
     const tipsByModule = tm<Record<string, string[]>>('learner.reflection.tipsByModule', {
       M1: [],
@@ -110,7 +118,7 @@ export default function ReflectionPage() {
   );
 
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  const minWords = 150;
+  const minWords = moduleSettings?.reflectionMinWords ?? 150;
   const canSubmit = words >= minWords;
   const completionPct = Math.min(100, Math.round((words / minWords) * 100));
 
@@ -281,9 +289,11 @@ export default function ReflectionPage() {
       </div>
 
       <div className={styles.actions}>
-        <button className="btn btn-ghost" onClick={() => navigate('/dashboard')}>
-          {t('learner.reflection.saveLater', 'Save for later')}
-        </button>
+        {reflectionRequired ? null : (
+          <button className="btn btn-ghost" onClick={() => navigate('/dashboard')}>
+            {t('learner.reflection.saveLater', 'Save for later')}
+          </button>
+        )}
         <button className="btn btn-primary" onClick={handleSubmit} disabled={!canSubmit || busy}>
           {busy ? t('learner.reflection.submitting', 'Submitting...') : t('learner.reflection.submit', 'Submit reflection')}
         </button>

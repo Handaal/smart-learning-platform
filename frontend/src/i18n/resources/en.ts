@@ -13,11 +13,11 @@ export const en: TranslationDictionary = {
   },
   app: {
     brand: {
-      platformName: 'Smart Training Platform',
-      tagline: 'Smart Training & Emotion Platform',
+      platformName: 'AffectPath',
+      tagline: 'An adaptive training environment powered by emotion sensing',
     },
     footer: {
-      researchNotice: 'PhD Research Project · Confidential · 2026',
+      researchNotice: 'Experimental environment for scientific research | PhD Dissertation | 2026',
     },
   },
   common: {
@@ -377,6 +377,9 @@ export const en: TranslationDictionary = {
         noFace: 'No face',
         starting: 'Starting camera...',
         waiting: 'Waiting for a reading...',
+        collapse: 'Hide camera panel',
+        expand: 'Show camera panel',
+        collapsedActive: 'Camera and emotion sensing keep running in the background',
       },
       emotionLabel: {
         focused: 'High engagement',
@@ -1002,6 +1005,11 @@ export const en: TranslationDictionary = {
         openVideo: 'Open the video resource in a new tab',
         noVideo: 'No valid video link has been configured for this element yet.',
         textAnswer: 'Write your decision, analysis, or reflection here.',
+        noScorm: 'No SCORM package has been added for this element yet.',
+      },
+      scorm: {
+        loading: 'Loading the interactive content…',
+        completed: 'You have completed this interactive content.',
       },
         actions: {
           confirmAnswer: 'Submit response',

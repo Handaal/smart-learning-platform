@@ -46,6 +46,8 @@ type ModuleSummary = {
   description?: string | null;
   sequenceOrder: number;
   estimatedDurationMin?: number | null;
+  reflectionRequired?: boolean;
+  reflectionMinWords?: number;
   episodes: LessonSummary[];
 };
 
@@ -222,6 +224,7 @@ function contentStepTitle(
   if (element.contentType === 'TEXT') return tr('learner.session.contentStep.text', 'Text step');
   if (element.contentType === 'VIDEO') return tr('learner.session.contentStep.video', 'Video step');
   if (element.contentType === 'VISUAL') return tr('learner.session.contentStep.image', 'Visual step');
+  if (element.contentType === 'SCORM') return tr('learner.session.contentStep.scorm', 'Interactive content');
   return tr('learner.session.contentStep.activity', 'Interactive activity');
 }
 
@@ -544,6 +547,7 @@ export default function SessionPage() {
 
   const [wsReady, setWsReady] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [cameraPanelCollapsed, setCameraPanelCollapsed] = useState(false);
   const [streamReady, setStreamReady] = useState(false);
   const [emotionDiagnostics, setEmotionDiagnostics] = useState<EmotionTrackerDiagnostics | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -669,9 +673,30 @@ export default function SessionPage() {
 
   const contextualAdaptive = useMemo(() => {
     if (!matchingAdaptive.length) return null;
-    if (!selectedAdaptiveElementId) return matchingAdaptive[0] ?? null;
-    return matchingAdaptive.find((element) => element.id === selectedAdaptiveElementId) ?? matchingAdaptive[0] ?? null;
-  }, [matchingAdaptive, selectedAdaptiveElementId]);
+    // 1) An explicit learner choice always wins (confusion/frustration offer a
+    //    list of support options the learner can pick from).
+    if (selectedAdaptiveElementId) {
+      return (
+        matchingAdaptive.find((element) => element.id === selectedAdaptiveElementId) ??
+        matchingAdaptive[0] ??
+        null
+      );
+    }
+    // 2) Otherwise show the EXACT content the backend selected for this reaction.
+    //    The suggestion service picks the published block authored for the
+    //    detected emotion and returns its id; honoring that id keeps the opened
+    //    content aligned with the reaction instead of re-guessing by tag/order
+    //    (which could land on a draft or a differently ordered block).
+    const backendContentId = pendingAdaptiveAlert?.contentId ?? null;
+    if (backendContentId) {
+      const byId =
+        matchingAdaptive.find((element) => element.id === backendContentId) ??
+        lessonElements.find((element) => element.id === backendContentId);
+      if (byId) return byId;
+    }
+    // 3) Fall back to the best tag match.
+    return matchingAdaptive[0] ?? null;
+  }, [lessonElements, matchingAdaptive, pendingAdaptiveAlert?.contentId, selectedAdaptiveElementId]);
 
   const lessonSteps = useMemo<LessonStep[]>(() => {
     const lessonFlow = contextualAdaptive
@@ -1091,6 +1116,12 @@ export default function SessionPage() {
       });
       await sessionApi.end(sessionId);
     }
+    // The session reflection is only part of the flow when the admin marked it
+    // required for this unit. When it is optional, skip straight to the modules.
+    if (module?.reflectionRequired === false) {
+      navigate('/modules');
+      return;
+    }
     navigate(`/reflect/${sessionId}`);
   }
 
@@ -1225,7 +1256,11 @@ export default function SessionPage() {
         </div>
       </header>
 
-      <div className={`${styles.layout} ${adaptiveExperienceEnabled ? styles.layoutWithPanel : ''}`}>
+      <div
+        className={`${styles.layout} ${
+          adaptiveExperienceEnabled && !cameraPanelCollapsed ? styles.layoutWithPanel : ''
+        }`}
+      >
         <aside className={`${styles.outlineDrawer} ${showOutline ? styles.outlineDrawerOpen : ''}`}>
           <section className={styles.outlineSection}>
             <div className={styles.outlineHead}>
@@ -1478,6 +1513,8 @@ export default function SessionPage() {
             confidence={emotionConfidence}
             diagnostics={emotionDiagnostics}
             streamReady={streamReady}
+            collapsed={cameraPanelCollapsed}
+            onToggleCollapsed={() => setCameraPanelCollapsed((collapsed) => !collapsed)}
           />
         ) : null}
       </div>
