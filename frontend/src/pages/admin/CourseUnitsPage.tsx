@@ -107,6 +107,8 @@ export default function CourseUnitsPage() {
     const description = String(form.get('description') ?? '').trim();
     const estimatedDurationMin = Number(form.get('estimatedDurationMin') ?? 0) || null;
     const objectives = parseObjectives(form.get('objectives'));
+    const reflectionRequired = form.get('reflectionRequired') === 'on';
+    const reflectionMinWords = Math.max(1, Number(form.get('reflectionMinWords') ?? 150) || 150);
 
     if (unitModal.data?.id) {
       await scenarioApi.updateModule(unitModal.data.id, {
@@ -115,6 +117,8 @@ export default function CourseUnitsPage() {
         objectives,
         estimatedDurationMin,
         status: unitModal.data.status ?? 'draft',
+        reflectionRequired,
+        reflectionMinWords,
       });
     } else {
       const nextOrder = (modules[modules.length - 1]?.sequenceOrder ?? 0) + 1;
@@ -126,6 +130,8 @@ export default function CourseUnitsPage() {
         estimatedDurationMin,
         sequenceOrder: nextOrder,
         status: 'draft',
+        reflectionRequired,
+        reflectionMinWords,
       });
     }
     setUnitModal({ open: false });
@@ -269,7 +275,7 @@ export default function CourseUnitsPage() {
                     <Trash2 size={16} />
                   </button>
                   <button type="button" className={styles.iconBtn} onClick={() => void handleTogglePublish(unit)} title={unit.status === 'published' ? 'إخفاء' : 'نشر'}>
-                    {unit.status === 'published' ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {unit.status === 'published' ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                   <button type="button" className={styles.iconBtn} onClick={() => setUnitModal({ open: true, data: unit })} title="تعديل">
                     <PencilLine size={16} />
@@ -318,6 +324,24 @@ export default function CourseUnitsPage() {
             <label className={styles.field}>
               <span>المدة التقديرية (دقائق)</span>
               <input className="input" name="estimatedDurationMin" type="number" min={0} defaultValue={unitModal.data?.estimatedDurationMin ?? ''} />
+            </label>
+            <label className={`${styles.field} ${styles.checkboxField ?? ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                name="reflectionRequired"
+                defaultChecked={unitModal.data?.reflectionRequired ?? true}
+              />
+              <span>التأمل الختامي مطلوب بعد هذه الوحدة</span>
+            </label>
+            <label className={styles.field}>
+              <span>الحد الأدنى لعدد كلمات التأمل</span>
+              <input
+                className="input"
+                name="reflectionMinWords"
+                type="number"
+                min={1}
+                defaultValue={unitModal.data?.reflectionMinWords ?? 150}
+              />
             </label>
             <div className={styles.modalActions}>
               <button type="button" className="btn btn-secondary" onClick={() => setUnitModal({ open: false })}>إلغاء</button>

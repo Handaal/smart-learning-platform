@@ -27,14 +27,15 @@
 }
 
 .logo {
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-blue));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  display: block;
+  width: auto;
+  height: 54px;
+  max-width: 100%;
+  object-fit: contain;
+  padding: 7px 12px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
 }
 
 .logoSub {

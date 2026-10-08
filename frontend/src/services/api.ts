@@ -177,6 +177,34 @@ export const scenarioApi = {
     return res.json() as Promise<{ data: { url: string; fileName: string } }>;
   },
 
+  // Upload a SCORM package (.zip, raw binary) → extracted + validated server-side,
+  // returns the launch URL + metadata to store as SCORM content.
+  uploadScorm: async (file: File) => {
+    const token = useAuthStore.getState().accessToken;
+    const res = await fetch(`${BASE}/api/scenarios/content/upload-scorm`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/zip',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: file,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) useAuthStore.getState().logout();
+      throw new ApiError(res.status, body.error ?? 'Upload failed', body.code);
+    }
+    return res.json() as Promise<{
+      data: {
+        scormId: string;
+        url: string;
+        launchHref: string;
+        title: string | null;
+        scormVersion: string | null;
+      };
+    }>;
+  },
+
   reorder:       (items: any[]) => post('/scenarios/reorder', { items }),
 };
 

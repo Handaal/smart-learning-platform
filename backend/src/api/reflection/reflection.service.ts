@@ -127,8 +127,21 @@ export async function submit(learnerId: string, input: SubmitInput) {
   const words   = input.responseText.split(/\s+/).filter(Boolean);
   const wc      = words.length;
 
-  if (wc < (prompt.minWords ?? 50))
-    throw new AppError(422, `الاستجابة قصيرة جدًا. الحد الأدنى هو ${prompt.minWords} كلمة.`, 'TOO_SHORT');
+  // The admin-managed per-unit minimum takes precedence over the prompt default.
+  const session = await prisma.session.findUnique({
+    where: { id: input.sessionId },
+    select: { moduleId: true },
+  });
+  const moduleSettings = session?.moduleId
+    ? await prisma.module.findUnique({
+        where: { id: session.moduleId },
+        select: { reflectionMinWords: true },
+      })
+    : null;
+  const minWords = moduleSettings?.reflectionMinWords ?? prompt.minWords ?? 50;
+
+  if (wc < minWords)
+    throw new AppError(422, `الاستجابة قصيرة جدًا. الحد الأدنى هو ${minWords} كلمة.`, 'TOO_SHORT');
 
   const nlp = analyseText(input.responseText);
 

@@ -92,11 +92,24 @@ app.use(express.json({ limit: '2mb' }));
 app.use(morgan('combined', { stream: { write: msg => logger.http(msg.trim()) } }));
 app.use(requestId);
 
-// Admin-uploaded lesson files (PDFs) — served statically so learners can view
-// them in an iframe. Registered before the rate limiter so document viewing
-// isn't throttled like API calls.
+// Admin-uploaded lesson files (PDFs + extracted SCORM packages) — served
+// statically so learners can view them in an iframe. Registered before the rate
+// limiter so document viewing isn't throttled like API calls.
 ensureUploadsDir();
-app.use('/uploads', express.static(uploadsDir, { maxAge: '1h' }));
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    // SCORM packages rely on inline scripts/eval that helmet's default CSP
+    // ('script-src self') would block. Relax CSP for the extracted SCORM
+    // subtree only; it is same-origin static content the admin uploaded.
+    if (req.url.startsWith('/scorm/')) {
+      res.removeHeader('Content-Security-Policy');
+      res.removeHeader('Cross-Origin-Embedder-Policy');
+    }
+    next();
+  },
+  express.static(uploadsDir, { maxAge: '1h' }),
+);
 
 app.use(rateLimiter);
 

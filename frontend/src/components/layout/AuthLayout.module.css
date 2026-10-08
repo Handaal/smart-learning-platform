@@ -14,14 +14,15 @@
 }
 
 .logo {
-  font-family: var(--font-heading);
-  font-size: 1.85rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--color-accent-2), #38BDF8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  display: inline-block;
+  width: auto;
+  height: 132px;
+  max-width: 100%;
+  object-fit: contain;
+  padding: 14px 22px;
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm), 0 0 40px rgba(13, 148, 136, 0.08);
 }
 
 .tagline {

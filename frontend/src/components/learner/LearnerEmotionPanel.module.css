@@ -28,6 +28,89 @@
   color: var(--color-text);
 }
 
+.collapseBtn {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-3);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.collapseBtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* Collapsed: the panel is lifted out of the layout flow and shown as a small
+   floating control. The camera stage (video element) stays mounted and painting
+   at 1px so MediaPipe keeps receiving frames and emotion tracking never stops. */
+.panelCollapsed {
+  position: fixed;
+  inset-inline-end: 18px;
+  top: calc(var(--header-height) + 20px);
+  display: block;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  z-index: 60;
+}
+
+.panelCollapsed .head,
+.panelCollapsed .toggle,
+.panelCollapsed .analysis {
+  display: none;
+}
+
+.panelCollapsed .stage {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  aspect-ratio: auto;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.expandFab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-md, var(--shadow-sm));
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.expandFab:hover {
+  border-color: var(--color-accent);
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
 .stage {
   position: relative;
   width: 100%;

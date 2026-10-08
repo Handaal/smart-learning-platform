@@ -86,6 +86,7 @@ enum ContentType {
   VISUAL
   VIDEO
   ASSESSMENT
+  SCORM
 }
 
 enum CompetencySource {
@@ -266,6 +267,10 @@ model Module {
   sequenceOrder        Int     @map("sequence_order")
   isAssessable         Boolean @default(true) @map("is_assessable")
   status               PublishStatus @default(published)
+
+  // Admin-managed session-reflection settings for this unit.
+  reflectionRequired   Boolean @default(true) @map("reflection_required")
+  reflectionMinWords   Int     @default(150) @map("reflection_min_words")
 
   episodes          Episode[]
   quizzes           Quiz[]

@@ -2,7 +2,7 @@ import type { LessonQuiz } from '@/components/admin/LessonQuizBuilder';
 
 export type PublishStatus = 'draft' | 'published';
 
-export type ContentBlockType = 'TEXT' | 'VISUAL' | 'VIDEO' | 'ASSESSMENT';
+export type ContentBlockType = 'TEXT' | 'VISUAL' | 'VIDEO' | 'ASSESSMENT' | 'SCORM';
 
 /** The six authorable emotion channels + the baseline (non-adaptive) path. */
 export type AuthorableAdaptiveTag =
@@ -49,6 +49,10 @@ export type ModuleRecord = {
   estimatedDurationMin?: number | null;
   primaryCompetency?: string | null;
   status: PublishStatus;
+  /** Whether learners must submit the session reflection after this unit. */
+  reflectionRequired?: boolean;
+  /** Minimum word count required to submit the session reflection. */
+  reflectionMinWords?: number;
   episodes: LessonRecord[];
 };
 
@@ -83,6 +87,7 @@ export const CONTENT_TYPE_OPTIONS: Array<{ value: ContentBlockType; label: strin
   { value: 'VISUAL', label: 'صورة / ملف / مخطط' },
   { value: 'VIDEO', label: 'فيديو' },
   { value: 'ASSESSMENT', label: 'نشاط / سؤال قصير' },
+  { value: 'SCORM', label: 'محتوى سكورم' },
 ];
 
 export type AdaptivePlacementMode = 'baseline' | 'before' | 'after' | 'instead';

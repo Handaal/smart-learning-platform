@@ -13,11 +13,11 @@ export const ar: TranslationDictionary = {
   },
   app: {
     brand: {
-      platformName: 'منصة التدريب الذكي',
-      tagline: 'منصة التدريب الذكي والاستشعار الانفعالي',
+      platformName: 'AffectPath',
+      tagline: 'بيئة تدريب ذكية قائمة على نظام استشعار المشاعر',
     },
     footer: {
-      researchNotice: 'مشروع بحث دكتوراه · سري · 2026',
+      researchNotice: 'بيئة تجريبية لأغراض البحث العلمي | رسالة دكتوراه | 2026',
     },
   },
   common: {
@@ -377,6 +377,9 @@ export const ar: TranslationDictionary = {
         noFace: 'لا يوجد وجه',
         starting: 'جارٍ تشغيل الكاميرا...',
         waiting: 'بانتظار قراءة...',
+        collapse: 'إخفاء لوحة الكاميرا',
+        expand: 'إظهار لوحة الكاميرا',
+        collapsedActive: 'الكاميرا واستشعار المشاعر يعملان في الخلفية',
       },
       emotionLabel: {
         focused: 'انخراط مرتفع',
@@ -914,6 +917,11 @@ export const ar: TranslationDictionary = {
         openVideo: 'افتح مورد الفيديو في علامة تبويب جديدة',
         noVideo: 'لم يتم إعداد رابط فيديو صالح لهذا العنصر بعد.',
         textAnswer: 'اكتب قرارك أو تحليلك أو تأملك هنا.',
+        noScorm: 'لم تتم إضافة حزمة سكورم لهذا العنصر بعد.',
+      },
+      scorm: {
+        loading: 'جارٍ تحميل المحتوى التفاعلي…',
+        completed: 'لقد أكملت هذا المحتوى التفاعلي.',
       },
       actions: {
         confirmAnswer: 'أرسل الاستجابة',

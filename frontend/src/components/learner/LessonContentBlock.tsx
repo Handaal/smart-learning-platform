@@ -7,11 +7,12 @@ import {
 import { useI18n } from '@/i18n';
 import { learnerVisibility, shouldShowLearnerElement } from '@/features/learnerVisibility';
 import type { LearnerStepRuntimeState } from './lessonFlow';
+import ScormPlayer from './ScormPlayer';
 import styles from './LessonContentBlock.module.css';
 
 export type LessonContentElement = {
   id: string;
-  contentType: 'TEXT' | 'VISUAL' | 'VIDEO' | 'ASSESSMENT';
+  contentType: 'TEXT' | 'VISUAL' | 'VIDEO' | 'ASSESSMENT' | 'SCORM';
   adaptiveTag?: string | null;
   scaffoldLevel: number;
   isEnrichment: boolean;
@@ -370,6 +371,25 @@ export default function LessonContentBlock({ element, variant = 'base', onComple
           )}
           {body ? <p className={styles.caption}>{body}</p> : null}
         </div>
+      ) : null}
+
+      {element.contentType === 'SCORM' ? (
+        asText(element.contentData.scormUrl) ? (
+          <ScormPlayer
+            src={asText(element.contentData.scormUrl)}
+            title={title}
+            onComplete={() => onComplete?.(element.id)}
+          />
+        ) : (
+          <div className={styles.mediaSection}>
+            <div className={styles.placeholder}>
+              {t(
+                'learner.lessonContent.placeholders.noScorm',
+                'No SCORM package has been added for this element yet.',
+              )}
+            </div>
+          </div>
+        )
       ) : null}
 
       {element.contentType === 'ASSESSMENT' ? (
