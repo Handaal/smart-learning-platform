@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useI18n } from '@/i18n';
 import styles from './LessonContentBlock.module.css';
 
@@ -35,6 +35,9 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
     'cmi.core.score.min': '',
     'cmi.core.score.max': '',
     'cmi.core.total_time': '0000:00:00',
+    'cmi.core.lesson_mode': 'normal',
+    'cmi.core.exit': '',
+    'cmi.core.session_time': '00:00:00',
     'cmi.suspend_data': '',
     'cmi.launch_data': '',
     'cmi.comments': '',
@@ -111,12 +114,13 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
 
 export default function ScormPlayer({ src, title, onComplete }: Props) {
   const { t } = useI18n();
+  const [apiReady, setApiReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [completed, setCompleted] = useState(false);
   const completeRef = useRef(onComplete);
   completeRef.current = onComplete;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const storageKey = `scorm:cmi:${src}`;
     const api = createScorm12Api(storageKey, (status) => {
       if (status === 'completed' || status === 'passed') {
@@ -125,14 +129,21 @@ export default function ScormPlayer({ src, title, onComplete }: Props) {
       }
     });
 
-    // SCORM 1.2 content looks up window.parent.API; SCORM 2004 looks up
-    // API_1484_11. We register the 1.2 API under both common names so the
-    // widest range of published packages can find it.
+    // The SCORM API MUST exist on window before the iframe is inserted into the
+    // DOM. Packages like Articulate Rise (loadOnlyInLms: true) call findAPI()
+    // the moment their bundle executes, and if window.API is absent they decide
+    // they are not inside an LMS and render nothing. We therefore attach the API
+    // in a layout effect and gate the <iframe> below on `apiReady`, so the frame
+    // is only mounted once the API is reachable at window.parent.API.
+    // SCORM 1.2 packages look for window.API (SCORM 2004 would look for
+    // API_1484_11, which this 1.2 runtime deliberately does not claim).
     const w = window as unknown as Record<string, unknown>;
     const previousApi = w.API;
     w.API = api;
+    setApiReady(true);
 
     return () => {
+      setApiReady(false);
       // Restore whatever (if anything) was there before this player mounted.
       if (previousApi === undefined) delete w.API;
       else w.API = previousApi;
@@ -147,14 +158,16 @@ export default function ScormPlayer({ src, title, onComplete }: Props) {
             {t('learner.lessonContent.scorm.loading', 'Loading the interactive content…')}
           </div>
         ) : null}
-        <iframe
-          className={styles.scormFrame}
-          src={src}
-          title={title}
-          onLoad={() => setLoaded(true)}
-          allow="autoplay; fullscreen; microphone; camera"
-          allowFullScreen
-        />
+        {apiReady ? (
+          <iframe
+            className={styles.scormFrame}
+            src={src}
+            title={title}
+            onLoad={() => setLoaded(true)}
+            allow="autoplay; fullscreen; microphone; camera"
+            allowFullScreen
+          />
+        ) : null}
       </div>
       {completed ? (
         <p className={styles.caption}>
