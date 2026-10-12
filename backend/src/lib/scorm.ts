@@ -147,8 +147,16 @@ export function extractScormPackage(buffer: Buffer): ScormExtractResult {
 
   const parsed = parseManifest(manifest.getData().toString('utf8'));
 
-  let launchHref = parsed.href;
+  const resolvesOnDisk = (href: string) => {
+    // Drop any ?query / #fragment before checking the file exists.
+    const clean = href.split(/[?#]/)[0];
+    return Boolean(clean) && existsSync(path.join(destDir, manifestDir, clean));
+  };
+
+  let launchHref = parsed.href && resolvesOnDisk(parsed.href) ? parsed.href : null;
   if (!launchHref) {
+    // The manifest href was missing or points at a file that is not actually in
+    // the package — fall back to the first well-known launch file present.
     for (const candidate of FALLBACK_LAUNCH_FILES) {
       if (existsSync(path.join(destDir, manifestDir, candidate))) {
         launchHref = candidate;
@@ -156,6 +164,9 @@ export function extractScormPackage(buffer: Buffer): ScormExtractResult {
       }
     }
   }
+  // Last resort: if the manifest named a launch file we could not find on disk,
+  // still use it (the package may route it through a service worker / rewrite).
+  if (!launchHref) launchHref = parsed.href;
   if (!launchHref) throw new ScormError('NO_LAUNCH');
 
   const relPath = [manifestDir, launchHref].filter(Boolean).join('/');

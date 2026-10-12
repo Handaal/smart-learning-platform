@@ -26,6 +26,7 @@ router.get('/export/emotion-events',  ctrl.exportEmotionEvents);
 router.get('/export/timeline-heatmap', ctrl.exportTimelineHeatmap);
 router.get('/export/competency',      ctrl.exportCompetency);
 router.get('/export/reflections',     ctrl.exportReflections);
+router.get('/export/scorm-progress',   ctrl.exportScormProgress);
 router.get('/export/merged-ml-dataset', ctrl.exportMergedAnalytics);
 router.get('/export/assessment-results', ctrl.exportAssessmentResultsXlsx);
 

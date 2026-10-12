@@ -23,6 +23,8 @@ export type LessonContentElement = {
 type Props = {
   element: LessonContentElement;
   variant?: 'base' | 'adaptive';
+  /** Current session id — enables backend SCORM progress persistence. */
+  sessionId?: string;
   onComplete?: (elementId: string) => void;
   onStateChange?: (state: LearnerStepRuntimeState) => void;
 };
@@ -111,7 +113,7 @@ function getEmbedUrl(url: string) {
   return null;
 }
 
-export default function LessonContentBlock({ element, variant = 'base', onComplete, onStateChange }: Props) {
+export default function LessonContentBlock({ element, variant = 'base', sessionId, onComplete, onStateChange }: Props) {
   const { t } = useI18n();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [textResponse, setTextResponse] = useState('');
@@ -378,6 +380,9 @@ export default function LessonContentBlock({ element, variant = 'base', onComple
           <ScormPlayer
             src={asText(element.contentData.scormUrl)}
             title={title}
+            contentId={element.id}
+            sessionId={sessionId}
+            scormId={asText(element.contentData.scormId) || undefined}
             onComplete={() => onComplete?.(element.id)}
           />
         ) : (

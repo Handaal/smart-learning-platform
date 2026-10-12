@@ -159,6 +159,7 @@ model Learner {
   pseAssessments    PseAssessment[]
   reflectionEntries ReflectionEntry[]
   artifactSubmissions ArtifactSubmission[]
+  scormProgress     ScormProgress[]
 
   @@map("learner")
 }
@@ -451,6 +452,7 @@ model Session {
   quizAttempts    QuizAttempt[]
   reflectionEntries ReflectionEntry[]
   artifactSubmissions ArtifactSubmission[]
+  scormProgress   ScormProgress[]
 
   @@map("session")
 }
@@ -724,6 +726,41 @@ model ReflectionEntry {
   prompt  ReflectionPrompt @relation(fields: [promptId], references: [id])
 
   @@map("reflection_entry")
+}
+
+// ── SCORM progress ────────────────────────────────────────────
+// One row per (learner, session, SCORM content block). The learner's in-app
+// SCORM 1.2 runtime commits CMI snapshots here so completion / score / time are
+// persisted per participant and the package can resume cross-device.
+model ScormProgress {
+  id             String    @id @default(uuid())
+  learnerId      String    @map("learner_id")
+  sessionId      String    @map("session_id")
+  contentId      String    @map("content_id")
+  scormId        String?   @map("scorm_id")
+  lessonStatus   String    @default("not_attempted") @map("lesson_status")
+  completed      Boolean   @default(false)
+  scoreRaw       Float?    @map("score_raw")
+  scoreMin       Float?    @map("score_min")
+  scoreMax       Float?    @map("score_max")
+  totalTimeSec   Int?      @map("total_time_sec")
+  sessionTimeSec Int?      @map("session_time_sec")
+  lessonLocation String?   @map("lesson_location")
+  suspendData    String?   @map("suspend_data")
+  cmiSnapshot    Json      @default("{}") @map("cmi_snapshot")
+  interactions   Json      @default("[]")
+  commitCount    Int       @default(0) @map("commit_count")
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  learner Learner @relation(fields: [learnerId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@unique([learnerId, sessionId, contentId])
+  @@index([sessionId])
+  @@index([contentId])
+  @@map("scorm_progress")
 }
 
 // ── Artifact Submissions ──────────────────────────────────────

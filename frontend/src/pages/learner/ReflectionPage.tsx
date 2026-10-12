@@ -219,6 +219,14 @@ export default function ReflectionPage() {
               minWords,
             })}
           </p>
+          <span
+            className={`badge ${reflectionRequired ? 'badge-coral' : 'badge-muted'}`}
+            style={{ marginTop: 6, display: 'inline-block' }}
+          >
+            {reflectionRequired
+              ? t('learner.reflection.requiredBadge', 'Required to continue')
+              : t('learner.reflection.optionalBadge', 'Optional — you can skip')}
+          </span>
         </div>
       </div>
 
@@ -289,9 +297,15 @@ export default function ReflectionPage() {
       </div>
 
       <div className={styles.actions}>
-        {reflectionRequired ? null : (
-          <button className="btn btn-ghost" onClick={() => navigate('/dashboard')}>
-            {t('learner.reflection.saveLater', 'Save for later')}
+        {reflectionRequired ? (
+          <span className={styles.requiredHint}>
+            {t('learner.reflection.requiredHint', 'A reflection of at least {min} words is required to finish this unit.', {
+              min: minWords,
+            })}
+          </span>
+        ) : (
+          <button className="btn btn-secondary" onClick={() => navigate('/modules')}>
+            {t('learner.reflection.skip', 'Skip and continue')}
           </button>
         )}
         <button className="btn btn-primary" onClick={handleSubmit} disabled={!canSubmit || busy}>

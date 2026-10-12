@@ -1331,6 +1331,32 @@ export async function exportReflections(_req: Request, res: Response, next: Next
   } catch (e) { next(e); }
 }
 
+export async function exportScormProgress(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const rows = await prisma.$queryRaw<object[]>`
+      SELECT l.participant_id, l.cohort, s.module_id, m.title AS module_title,
+             sp.content_id, sp.scorm_id, sp.lesson_status, sp.completed,
+             sp.score_raw, sp.score_min, sp.score_max,
+             sp.total_time_sec, sp.session_time_sec, sp.lesson_location,
+             sp.commit_count, sp.completed_at, sp.updated_at
+      FROM scorm_progress sp
+      JOIN learner l ON sp.learner_id = l.id
+      JOIN session s ON sp.session_id = s.id
+      LEFT JOIN module m ON s.module_id = m.id
+      ORDER BY l.participant_id, s.module_id, sp.content_id
+    `;
+    await researchLedger.logResearchExport({
+      exportType: 'scorm-progress',
+      exportFormat: 'csv',
+      requestedBy: _req.user?.sub ?? null,
+      fileName: 'step_scorm_progress.csv',
+    });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="step_scorm_progress.csv"');
+    res.send(toCSV(rows));
+  } catch (e) { next(e); }
+}
+
 export async function exportMergedAnalytics(_req: Request, res: Response, next: NextFunction) {
   try {
     const rows = await prisma.$queryRaw<object[]>`
