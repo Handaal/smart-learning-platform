@@ -26,6 +26,7 @@ import LessonQuizPanel from '@/components/learner/LessonQuizPanel';
 import Skeleton from '@/components/ui/Skeleton';
 import type { LearnerStepPresentation, LearnerStepRuntimeState } from '@/components/learner/lessonFlow';
 import { insertAdaptiveIntoBaseline } from '@/utils/adaptivePlacement';
+import { getEmotionCandidates, resolveEmotionContent } from '@/features/adaptiveContentMatch';
 import {
   normalizeAdaptiveScenarioKey,
   normalizeAdaptiveTag,
@@ -184,10 +185,6 @@ function getAdaptiveTags(state: CanonicalAdaptiveScenarioKey | null) {
   return state ? [state] : [];
 }
 
-function getAdaptiveDisplayTag(element: LessonContentElement) {
-  return asText(element.contentData.adaptiveTriggerLabel);
-}
-
 function mapTriggerTypeToState(triggerType?: string | null) {
   if (!triggerType) return null;
   return normalizeAdaptiveScenarioKey(triggerType);
@@ -201,17 +198,6 @@ function triggerUsesAdaptiveContent(triggerType?: string | null) {
     scenarioKey === 'boredom_disengagement' ||
     scenarioKey === 'high_engagement'
   );
-}
-
-function getAdaptiveMatchScore(
-  element: LessonContentElement,
-  state: CanonicalAdaptiveScenarioKey | null,
-  adaptiveTags: string[],
-) {
-  const displayTag = getAdaptiveDisplayTag(element);
-  if (displayTag && state && normalizeAdaptiveTag(displayTag) === state) return 0;
-  if (element.adaptiveTag && adaptiveTags.includes(normalizeAdaptiveTag(String(element.adaptiveTag)))) return 1;
-  return -1;
 }
 
 function contentStepTitle(
@@ -659,44 +645,24 @@ export default function SessionPage() {
     () => {
       if (!shouldResolveAdaptiveContent) return [];
       if (selectedAdaptiveElement && !pendingAdaptiveAlert) return [selectedAdaptiveElement];
-      return lessonElements
-        .map((element) => ({
-          element,
-          score: getAdaptiveMatchScore(element, adaptiveNoticeState, adaptiveTags),
-        }))
-        .filter((entry) => entry.score >= 0)
-        .sort((a, b) => a.score - b.score || a.element.sequenceOrder - b.element.sequenceOrder)
-        .map((entry) => entry.element);
+      return getEmotionCandidates(lessonElements, adaptiveNoticeState, adaptiveTags);
     },
     [adaptiveNoticeState, adaptiveTags, lessonElements, pendingAdaptiveAlert, selectedAdaptiveElement, shouldResolveAdaptiveContent],
   );
 
+  // The exact block to show for the detected emotion. The backend already picks
+  // the authored block for the dominant emotion and sends its id; resolver
+  // priority is: a valid explicit learner choice → the backend's exact block →
+  // the best tag match. See features/adaptiveContentMatch.ts.
   const contextualAdaptive = useMemo(() => {
-    if (!matchingAdaptive.length) return null;
-    // 1) An explicit learner choice always wins (confusion/frustration offer a
-    //    list of support options the learner can pick from).
-    if (selectedAdaptiveElementId) {
-      return (
-        matchingAdaptive.find((element) => element.id === selectedAdaptiveElementId) ??
-        matchingAdaptive[0] ??
-        null
-      );
-    }
-    // 2) Otherwise show the EXACT content the backend selected for this reaction.
-    //    The suggestion service picks the published block authored for the
-    //    detected emotion and returns its id; honoring that id keeps the opened
-    //    content aligned with the reaction instead of re-guessing by tag/order
-    //    (which could land on a draft or a differently ordered block).
-    const backendContentId = pendingAdaptiveAlert?.contentId ?? null;
-    if (backendContentId) {
-      const byId =
-        matchingAdaptive.find((element) => element.id === backendContentId) ??
-        lessonElements.find((element) => element.id === backendContentId);
-      if (byId) return byId;
-    }
-    // 3) Fall back to the best tag match.
-    return matchingAdaptive[0] ?? null;
-  }, [lessonElements, matchingAdaptive, pendingAdaptiveAlert?.contentId, selectedAdaptiveElementId]);
+    if (!shouldResolveAdaptiveContent) return null;
+    return resolveEmotionContent({
+      elements: lessonElements,
+      candidates: matchingAdaptive,
+      backendContentId: pendingAdaptiveAlert?.contentId ?? null,
+      selectedElementId: selectedAdaptiveElementId,
+    });
+  }, [shouldResolveAdaptiveContent, lessonElements, matchingAdaptive, pendingAdaptiveAlert?.contentId, selectedAdaptiveElementId]);
 
   const lessonSteps = useMemo<LessonStep[]>(() => {
     const lessonFlow = contextualAdaptive
