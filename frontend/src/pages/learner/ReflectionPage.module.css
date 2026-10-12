@@ -56,7 +56,13 @@
 .editor     { min-height: 260px; font-size: 0.9375rem; line-height: 1.7; }
 .wordCount  { display: flex; align-items: center; gap: var(--space-3); }
 
-.actions { display: flex; justify-content: space-between; }
+.actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+.requiredHint {
+  font-size: 0.8125rem;
+  color: var(--color-text-3);
+  max-width: 60%;
+}
 
 /* Success */
 .successCard {

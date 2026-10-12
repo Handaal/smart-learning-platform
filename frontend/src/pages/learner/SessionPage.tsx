@@ -1082,12 +1082,9 @@ export default function SessionPage() {
       });
       await sessionApi.end(sessionId);
     }
-    // The session reflection is only part of the flow when the admin marked it
-    // required for this unit. When it is optional, skip straight to the modules.
-    if (module?.reflectionRequired === false) {
-      navigate('/modules');
-      return;
-    }
+    // The reflection screen always appears after the lessons. Whether it is
+    // mandatory (must submit to continue) or optional (a skip button is shown)
+    // is decided on the reflection screen itself from the unit's admin settings.
     navigate(`/reflect/${sessionId}`);
   }
 
