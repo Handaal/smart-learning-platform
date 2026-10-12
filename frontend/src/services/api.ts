@@ -310,6 +310,7 @@ export const researchApi = {
   exportSessions:           () => downloadBlob('/research/export/sessions', 'step_sessions.csv'),
   exportCompetency:         () => downloadBlob('/research/export/competency', 'step_competency.csv'),
   exportReflections:        () => downloadBlob('/research/export/reflections', 'step_reflections.csv'),
+  exportScormProgress:      () => downloadBlob('/research/export/scorm-progress', 'step_scorm_progress.csv'),
   exportEmotionEvents:      () => downloadBlob('/research/export/emotion-events', 'step_emotion_events.csv'),
   exportTimelineHeatmap:    (params?: string) => downloadBlob(`/research/export/timeline-heatmap${params ? `?${params}` : ''}`, 'step_timeline_heatmap.csv'),
   exportMergedAnalytics:    () => downloadBlob('/research/export/merged-ml-dataset', 'step_merged_ml_dataset.csv'),
