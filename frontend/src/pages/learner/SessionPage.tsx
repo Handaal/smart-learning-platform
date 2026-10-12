@@ -1379,6 +1379,7 @@ export default function SessionPage() {
                   <LessonContentBlock
                     element={currentStep.element}
                     variant={currentStep.isAdaptive ? 'adaptive' : 'base'}
+                    sessionId={USE_MOCK ? undefined : sessionId}
                     onComplete={() => markStepComplete(currentStep.id)}
                     onStateChange={setCurrentStepState}
                   />

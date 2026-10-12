@@ -16,7 +16,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { researchApi } from '@/services/api';
+import { researchApi, scormApi, type ScormAdminRow } from '@/services/api';
 import { useI18n } from '@/i18n';
 import {
   MOCK_ADAPTIVE_EFFECTIVENESS,
@@ -81,6 +81,19 @@ type ReportCatalogItem = {
 function clampPreview(value: number, min = 0, max = 100) {
   if (!Number.isFinite(value)) return min;
   return Math.max(min, Math.min(max, value));
+}
+
+function formatDurationSec(sec: number | null | undefined) {
+  if (typeof sec !== 'number' || !Number.isFinite(sec) || sec <= 0) return '--';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function scormStatusTone(status: string): 'teal' | 'coral' | 'muted' {
+  if (status === 'completed' || status === 'passed') return 'teal';
+  if (status === 'failed') return 'coral';
+  return 'muted';
 }
 
 function normalizePreviewSeries(values: number[], targetLength = values.length || 1) {
@@ -165,6 +178,17 @@ export default function ResearchDashboard() {
   const contentEngagementQuery = useQuery({ queryKey: ['research', 'content-engagement'], queryFn: researchApi.contentEngagement, enabled: !USE_MOCK });
   const assessmentLatencyQuery = useQuery({ queryKey: ['research', 'assessment-latency'], queryFn: researchApi.assessmentLatency, enabled: !USE_MOCK });
   const emotionFrequencyQuery = useQuery({ queryKey: ['research', 'emotion-frequency'], queryFn: () => researchApi.emotionFrequency(), enabled: !USE_MOCK });
+  const scormProgressQuery = useQuery({ queryKey: ['research', 'scorm-progress'], queryFn: scormApi.adminProgress, enabled: !USE_MOCK });
+  const scormRows: ScormAdminRow[] = (scormProgressQuery.data?.data ?? []) as ScormAdminRow[];
+  const scormCompletedCount = scormRows.filter((r) => r.completed).length;
+  const scormScored = scormRows.filter((r) => typeof r.scoreRaw === 'number');
+  const scormAvgScore = scormScored.length
+    ? Math.round(scormScored.reduce((sum, r) => sum + (r.scoreRaw ?? 0), 0) / scormScored.length)
+    : null;
+  const scormTimed = scormRows.filter((r) => typeof r.totalTimeSec === 'number' && (r.totalTimeSec ?? 0) > 0);
+  const scormAvgTimeSec = scormTimed.length
+    ? Math.round(scormTimed.reduce((sum, r) => sum + (r.totalTimeSec ?? 0), 0) / scormTimed.length)
+    : null;
 
   const gains = useMemo(() => {
     const rows = USE_MOCK ? MOCK_COMPETENCY_GAIN : ((gainQuery.data as any)?.data ?? []);
@@ -988,6 +1012,67 @@ export default function ResearchDashboard() {
           <div className={styles.sectionIntro}><div><span className={styles.sectionEyebrow}>{ui('progressEyebrow', 'Learner progress analytics')}</span><h2>{ui('progressTitle', 'Sessions, completion, and progression')}</h2></div><p>{ui('progressLead', 'Participant-level progression rows with duration and hint load.')}</p></div>
           <article className={styles.fullWidthCard}><div className={styles.panelHead}><div><h3>{ui('progressTableTitle', 'Learner progress table')}</h3><p className={styles.cardLead}>{ui('progressTableLead', 'Research-ready participant progression records.')}</p></div><span className="badge badge-muted">{filtered.engagementData.length} {ui('learners', 'learners')}</span></div>
             <div className="table-scroll"><table className={styles.table}><thead><tr><th>{ui('thParticipant', 'Participant')}</th><th>{ui('thCohort', 'Cohort')}</th><th>{ui('thSessions', 'Sessions')}</th><th>{ui('thCompleted', 'Completed')}</th><th>{ui('thCompletion', 'Completion')}</th><th>{ui('thDuration', 'Duration')}</th><th>{ui('thHints', 'Hints')}</th></tr></thead><tbody>{filtered.engagementData.slice(0, 18).map((row: any) => <tr key={row.participantId} className={styles.clickRow} onClick={() => navigate(`/research-admin/participants/${row.participantId}`)}><td>{row.participantId}</td><td><span className={`badge ${row.cohort === 'experimental' ? 'badge-teal' : 'badge-muted'}`}>{cohortLabel(row.cohort)}</span></td><td>{row.totalSessions}</td><td>{row.completedSessions}</td><td>{Math.round(row.avgCompletionPct)}%</td><td>{row.avgDurationMin.toFixed(1)} {ui('minShort', 'min')}</td><td>{row.totalHints}</td></tr>)}</tbody></table></div>
+          </article>
+        </section>
+
+        <section id="scorm" className={styles.sectionBlock}>
+          <div className={styles.sectionIntro}>
+            <div>
+              <span className={styles.sectionEyebrow}>{ui('scormEyebrow', 'SCORM / محتوى تفاعلي')}</span>
+              <h2>{ui('scormTitle', 'SCORM content progress')}</h2>
+            </div>
+            <p>{ui('scormLead', 'Per-participant completion, score and time captured from interactive SCORM content.')}</p>
+          </div>
+          <article className={styles.fullWidthCard}>
+            <div className={styles.panelHead}>
+              <div>
+                <h3>{ui('scormTableTitle', 'SCORM progress table')}</h3>
+                <p className={styles.cardLead}>{ui('scormTableLead', 'Completion, score and time-on-content per participant and unit.')}</p>
+              </div>
+              <span className="badge badge-muted">{scormRows.length} {ui('scormRecords', 'records')}</span>
+            </div>
+            <div className={styles.summaryMetrics}>
+              <div className={styles.summaryMetric}><span>{ui('scormTracked', 'Tracked blocks')}</span><strong>{scormRows.length}</strong></div>
+              <div className={styles.summaryMetric}><span>{ui('scormCompleted', 'Completed')}</span><strong>{scormCompletedCount}</strong></div>
+              <div className={styles.summaryMetric}><span>{ui('scormAvgScore', 'Avg score')}</span><strong>{scormAvgScore === null ? '--' : `${scormAvgScore}%`}</strong></div>
+              <div className={styles.summaryMetric}><span>{ui('scormAvgTime', 'Avg time')}</span><strong>{formatDurationSec(scormAvgTimeSec)}</strong></div>
+            </div>
+            {scormRows.length ? (
+              <div className="table-scroll">
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>{ui('thParticipant', 'Participant')}</th>
+                      <th>{ui('thCohort', 'Cohort')}</th>
+                      <th>{ui('thUnit', 'Unit')}</th>
+                      <th>{ui('thStatus', 'Status')}</th>
+                      <th>{ui('thScore', 'Score')}</th>
+                      <th>{ui('thTime', 'Time')}</th>
+                      <th>{ui('thUpdated', 'Updated')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scormRows.slice(0, 50).map((row) => (
+                      <tr
+                        key={`${row.participantId}-${row.contentId}`}
+                        className={styles.clickRow}
+                        onClick={() => navigate(`/research-admin/participants/${row.participantId}`)}
+                      >
+                        <td>{row.participantId}</td>
+                        <td><span className={`badge ${row.cohort === 'experimental' ? 'badge-teal' : 'badge-muted'}`}>{cohortLabel(row.cohort)}</span></td>
+                        <td>{row.moduleTitle ?? row.moduleId}</td>
+                        <td><span className={`badge badge-${scormStatusTone(row.lessonStatus)}`}>{formatLabel(row.lessonStatus)}</span></td>
+                        <td>{typeof row.scoreRaw === 'number' ? `${Math.round(row.scoreRaw)}${typeof row.scoreMax === 'number' && row.scoreMax !== 100 ? `/${Math.round(row.scoreMax)}` : '%'}` : '--'}</td>
+                        <td>{formatDurationSec(row.totalTimeSec)}</td>
+                        <td>{fmtTime(row.updatedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className={styles.cardLead}>{ui('scormEmpty', 'No SCORM progress has been recorded yet. It appears here once participants open interactive SCORM content.')}</p>
+            )}
           </article>
         </section>
 

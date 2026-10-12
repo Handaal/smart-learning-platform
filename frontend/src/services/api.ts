@@ -253,6 +253,46 @@ export const assessmentApi = {
     get<{ data: unknown[] }>(`/assessments/learner/${learnerId}`),
 };
 
+// ── SCORM progress ───────────────────────────────────────────
+export type ScormCommitBody = {
+  sessionId: string;
+  contentId: string;
+  scormId?: string;
+  cmi: Record<string, string>;
+};
+
+export type ScormResumeData = {
+  lessonStatus: string;
+  completed: boolean;
+  lessonLocation: string | null;
+  suspendData: string | null;
+  scoreRaw: number | null;
+  totalTimeSec: number | null;
+} | null;
+
+export type ScormAdminRow = {
+  participantId: string;
+  cohort: 'experimental' | 'control';
+  moduleId: string;
+  moduleTitle: string | null;
+  contentId: string;
+  lessonStatus: string;
+  completed: boolean;
+  scoreRaw: number | null;
+  scoreMax: number | null;
+  totalTimeSec: number | null;
+  commitCount: number;
+  completedAt: string | null;
+  updatedAt: string;
+};
+
+export const scormApi = {
+  commit: (body: ScormCommitBody) => post<{ data: unknown }>('/scorm/progress', body),
+  getProgress: (sessionId: string, contentId: string) =>
+    get<{ data: ScormResumeData }>(`/scorm/progress/${sessionId}/${encodeURIComponent(contentId)}`),
+  adminProgress: () => get<{ data: ScormAdminRow[] }>('/scorm/admin/progress'),
+};
+
 // ── Research ─────────────────────────────────────────────────
 export const researchApi = {
   competencyGain:           () => get('/research/competency-gain'),

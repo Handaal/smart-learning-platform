@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { scormApi, type ScormResumeData } from '@/services/api';
 import { useI18n } from '@/i18n';
 import styles from './LessonContentBlock.module.css';
 
@@ -6,21 +7,46 @@ type Props = {
   /** Root-relative launch URL, e.g. /uploads/scorm/<id>/index.html (same origin). */
   src: string;
   title: string;
+  /** LearningContent id of this SCORM block (used as the progress key). */
+  contentId: string;
+  /** Current session id. When present, progress is persisted to the backend. */
+  sessionId?: string;
+  /** Extracted package id (stored alongside the progress row). */
+  scormId?: string;
   /** Called when the SCORM content reports a completed/passed lesson status. */
   onComplete?: () => void;
+};
+
+type Scorm12Api = {
+  LMSInitialize(): string;
+  LMSFinish(): string;
+  LMSGetValue(element: string): string;
+  LMSSetValue(element: string, value: string): string;
+  LMSCommit(): string;
+  LMSGetLastError(): string;
+  LMSGetErrorString(): string;
+  LMSGetDiagnostic(): string;
+  getData(): Record<string, string>;
 };
 
 /**
  * Minimal SCORM 1.2 runtime. SCORM content, loaded in a same-origin iframe,
  * discovers the LMS API by walking `window.parent` for an `API` object. We
  * expose exactly that object while the player is mounted and tear it down on
- * unmount. The CMI data model is kept in memory and mirrored to localStorage
- * (keyed by the package URL) so a learner can resume suspend_data on reload.
+ * unmount. The CMI data model is kept in memory, mirrored to localStorage, and
+ * — when a session id is present — committed to the backend so completion,
+ * score and time are persisted per participant and can resume cross-device.
  *
  * It is intentionally conservative: every getter returns a string and never
  * throws, which is what SCORM 1.2 packages expect from a conformant LMS.
  */
-function createScorm12Api(storageKey: string, onStatus: (status: string) => void) {
+function createScorm12Api(options: {
+  storageKey: string;
+  seed: ScormResumeData;
+  onStatus: (status: string) => void;
+  onCommit: (data: Record<string, string>, final: boolean) => void;
+}): Scorm12Api {
+  const { storageKey, seed, onStatus, onCommit } = options;
   let initialized = false;
   let lastError = '0';
 
@@ -45,6 +71,8 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
   };
 
   let data: Record<string, string> = { ...defaults };
+
+  // 1) Resume from localStorage (same-device fallback).
   try {
     const stored = localStorage.getItem(storageKey);
     if (stored) {
@@ -52,7 +80,16 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
       data = { ...data, ...parsed, 'cmi.core.entry': 'resume' };
     }
   } catch {
-    /* storage unavailable — run without resume */
+    /* storage unavailable — run without local resume */
+  }
+
+  // 2) Server-side resume wins (cross-device): seed the opaque suspend_data,
+  //    location and status the backend holds for this participant.
+  if (seed) {
+    if (seed.suspendData != null) data['cmi.suspend_data'] = seed.suspendData;
+    if (seed.lessonLocation != null) data['cmi.core.lesson_location'] = seed.lessonLocation;
+    if (seed.lessonStatus) data['cmi.core.lesson_status'] = seed.lessonStatus;
+    if (seed.suspendData || seed.lessonLocation) data['cmi.core.entry'] = 'resume';
   }
 
   const persist = () => {
@@ -72,6 +109,7 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
     LMSFinish() {
       initialized = false;
       persist();
+      onCommit(data, true);
       lastError = '0';
       return 'true';
     },
@@ -93,6 +131,7 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
     },
     LMSCommit() {
       persist();
+      onCommit(data, false);
       lastError = '0';
       return 'true';
     },
@@ -105,14 +144,13 @@ function createScorm12Api(storageKey: string, onStatus: (status: string) => void
     LMSGetDiagnostic() {
       return '';
     },
-    /** non-standard helper some packages probe for */
-    get isInitialized() {
-      return initialized;
+    getData() {
+      return { ...data };
     },
   };
 }
 
-export default function ScormPlayer({ src, title, onComplete }: Props) {
+export default function ScormPlayer({ src, title, contentId, sessionId, scormId, onComplete }: Props) {
   const { t } = useI18n();
   const [apiReady, setApiReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -120,35 +158,72 @@ export default function ScormPlayer({ src, title, onComplete }: Props) {
   const completeRef = useRef(onComplete);
   completeRef.current = onComplete;
 
-  useLayoutEffect(() => {
-    const storageKey = `scorm:cmi:${src}`;
-    const api = createScorm12Api(storageKey, (status) => {
-      if (status === 'completed' || status === 'passed') {
-        setCompleted(true);
-        completeRef.current?.();
-      }
-    });
-
-    // The SCORM API MUST exist on window before the iframe is inserted into the
-    // DOM. Packages like Articulate Rise (loadOnlyInLms: true) call findAPI()
-    // the moment their bundle executes, and if window.API is absent they decide
-    // they are not inside an LMS and render nothing. We therefore attach the API
-    // in a layout effect and gate the <iframe> below on `apiReady`, so the frame
-    // is only mounted once the API is reachable at window.parent.API.
-    // SCORM 1.2 packages look for window.API (SCORM 2004 would look for
-    // API_1484_11, which this 1.2 runtime deliberately does not claim).
+  useEffect(() => {
+    let cancelled = false;
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined;
     const w = window as unknown as Record<string, unknown>;
     const previousApi = w.API;
-    w.API = api;
-    setApiReady(true);
+    let apiInstance: Scorm12Api | null = null;
+
+    const sendCommit = (data: Record<string, string>) => {
+      if (!sessionId) return; // no backend persistence without a real session
+      scormApi.commit({ sessionId, contentId, scormId, cmi: data }).catch(() => {
+        /* progress is best-effort; a failed commit must never break playback */
+      });
+    };
+
+    const onCommit = (data: Record<string, string>, final: boolean) => {
+      if (final) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        sendCommit({ ...data });
+        return;
+      }
+      // Rise commits frequently; debounce so we persist at most ~1/1.5s.
+      if (debounceTimer) clearTimeout(debounceTimer);
+      const snapshot = { ...data };
+      debounceTimer = setTimeout(() => sendCommit(snapshot), 1500);
+    };
+
+    (async () => {
+      let seed: ScormResumeData = null;
+      if (sessionId) {
+        seed = await scormApi
+          .getProgress(sessionId, contentId)
+          .then((r) => r.data)
+          .catch(() => null);
+      }
+      if (cancelled) return;
+
+      apiInstance = createScorm12Api({
+        storageKey: `scorm:cmi:${src}`,
+        seed,
+        onStatus: (status) => {
+          if (status === 'completed' || status === 'passed') {
+            setCompleted(true);
+            completeRef.current?.();
+          }
+        },
+        onCommit,
+      });
+
+      // The SCORM API MUST exist on window before the iframe is inserted. Rise
+      // (loadOnlyInLms: true) runs findAPI() the moment its bundle executes; the
+      // <iframe> below is gated on `apiReady` so it only mounts once the API is
+      // reachable at window.parent.API.
+      w.API = apiInstance;
+      setApiReady(true);
+    })();
 
     return () => {
+      cancelled = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      // Flush a final snapshot on unmount (SPA navigation keeps the fetch alive).
+      if (apiInstance) sendCommit(apiInstance.getData());
       setApiReady(false);
-      // Restore whatever (if anything) was there before this player mounted.
       if (previousApi === undefined) delete w.API;
       else w.API = previousApi;
     };
-  }, [src]);
+  }, [src, sessionId, contentId, scormId]);
 
   return (
     <div className={styles.mediaSection}>
